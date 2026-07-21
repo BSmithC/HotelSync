@@ -16,4 +16,8 @@ class Client extends Model
         'phone_number',
         'active',
     ];
+    public function rooms()
+    {
+        return $this->hasMany(Room::class);
+    }
 }
