@@ -17,7 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, Users, RefreshCw } from 'lucide-react';
 
 interface Client {
     id: number;
@@ -32,7 +32,6 @@ interface Client {
 
 export default function Index({ clients }: { clients: Client[] }) {
 
-    // Función para formatear la cédula visualmente (402-0000000-0)
     const formatCedula = (cedula: string) => {
         const clean = cedula.replace(/\D/g, '');
         if (clean.length === 11) {
@@ -41,7 +40,6 @@ export default function Index({ clients }: { clients: Client[] }) {
         return cedula;
     };
 
-    // Helper para mostrar el documento adecuado (Cédula o RNC)
     const renderDocument = (client: Client) => {
         if (client.cedula) return formatCedula(client.cedula);
         if (client.rnc) return `RNC: ${client.rnc}`;
@@ -51,6 +49,14 @@ export default function Index({ clients }: { clients: Client[] }) {
     const handleDelete = (id: number) => {
         if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
             router.delete(`/clients/${id}`);
+        }
+    };
+
+    // Restaurar (Reactivar cliente)
+    const handleRestore = (id: number) => {
+        if (confirm('¿Deseas restaurar este cliente?')) {
+            // Envía el parámetro 'active' para activar el "if" que tienes en tu controlador
+            router.put(`/clients/${id}`, { active: true });
         }
     };
 
@@ -134,13 +140,23 @@ export default function Index({ clients }: { clients: Client[] }) {
                                                                 Editar
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDelete(client.id)}
-                                                            className="text-red-600 focus:text-red-600 cursor-pointer"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Eliminar
-                                                        </DropdownMenuItem>
+                                                        {client.active ? (
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleDelete(client.id)}
+                                                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Eliminar
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleRestore(client.id)}
+                                                                className="text-emerald-600 focus:text-emerald-600 cursor-pointer"
+                                                            >
+                                                                <RefreshCw className="mr-2 h-4 w-4" />
+                                                                Restaurar
+                                                            </DropdownMenuItem>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>

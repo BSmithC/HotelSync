@@ -82,7 +82,9 @@ class ClientController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $client = Client::findOrFail($id);
+
+        return Inertia::render('Clients/Edit', compact('client'));
     }
 
     /**
@@ -90,7 +92,40 @@ class ClientController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $client = Client::findOrFail($id);
+
+        if ($request->has('active')) {
+            $client->active = 1;
+            $client->save();
+
+            return redirect()->route('clients.index')->with('success', ('Cliente restaurando correctamente'));
+        }
+        if ($request->has('cedula') && ! empty($request->cedula)) {
+            $request->merge(['cedula' => preg_replace('/[^0-9]/', '', $request->cedula)]);
+        }
+        if ($request->has('rnc') && ! empty($request->rnc)) {
+            $request->merge(['rnc' => preg_replace('/[^0-9]/', '', $request->rnc)]);
+        }
+        $cedula = $request->filled('cedula') ? preg_replace('/[^0-9]/', '', $request->cedula) : null;
+        $rnc = $request->filled('rnc') ? preg_replace('/[^0-9]/', '', $request->rnc) : null;
+
+        $request->merge([
+            'cedula' => $cedula ?: null,
+            'rnc' => $rnc ?: null,
+        ]);
+
+        $validated = $request->validate([
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'cedula' => 'nullable|required_without:rnc|regex:/^[0-9]{11}$/|unique:clients,cedula,'.$client->id,
+            'rnc' => 'nullable|required_without:cedula|regex:/^[0-9]{9}$/|unique:clients,rnc,'.$client->id,
+            'address' => 'required|string',
+            'phone_number' => 'required|string',
+        ]);
+
+        $client->update($validated);
+
+        return redirect()->route('clients.index')->with('success', 'Cliente actualizado correctamente');
     }
 
     /**
@@ -98,6 +133,11 @@ class ClientController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $client = Client::findOrFail($id);
+
+        $client->active = 0;
+        $client->save();
+
+        return redirect()->route('clients.index')->with('success', ('Cliente desativado correctamente'));
     }
 }
