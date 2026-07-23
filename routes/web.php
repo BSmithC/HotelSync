@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BedController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
@@ -12,5 +13,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::resource('/clients', ClientController::class);
 Route::resource('/rooms', RoomController::class);
+Route::resource('/beds', BedController::class);
 
 require __DIR__.'/settings.php';

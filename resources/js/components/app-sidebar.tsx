@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, User, BedSingle } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, User, BedSingle, HousePlug } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -30,6 +30,11 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Habitaciones',
         href: '/rooms',
+        icon: HousePlug,
+    },
+    {
+        title: 'Camas',
+        href: '/beds',
         icon: BedSingle,
     },
 ];

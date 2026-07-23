@@ -24,7 +24,6 @@ export default function Create() {
         phone_number: "",
     });
 
-    // Formatear la Cédula (402-0000000-0)
     const formatCedula = (value: string) => {
         const digits = value.replace(/\D/g, '').slice(0, 11);
         if (digits.length <= 3) return digits;
@@ -32,7 +31,6 @@ export default function Create() {
         return `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10)}`;
     };
 
-    // Formatear el RNC (Máximo 11 dígitos)
     const formatRNC = (value: string) => {
         return value.replace(/\D/g, '').slice(0, 11);
     };
