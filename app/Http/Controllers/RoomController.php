@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
 use App\Models\Room;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,22 +16,16 @@ class RoomController extends Controller
     {
         $query = Room::query();
 
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('room_number', 'like', "%{$request->search}%");
-            })->OrwhereHas('client', function ($q) use ($request) {
-                $q->where('first_name', 'like', "%{$request->search}%")
-                    ->orWhere('last_name', 'like', "%{$request->search}%");
-            });
-        }
-
         if ($request->filled('status')) {
             $query->where('active', $request->status);
         }
 
         $rooms = Room::all();
 
-        return Inertia::render('Rooms/Index', compact('rooms'));
+        return Inertia::render('Rooms/Index', [
+            'area' => Area::all(),
+            'room' => $rooms,
+        ]);
     }
 
     /**
@@ -38,7 +33,9 @@ class RoomController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('Rooms/Create', [
+            'areas' => Area::all(),
+        ]);
     }
 
     /**
@@ -46,7 +43,24 @@ class RoomController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:50',
+            'capacity' => 'required|integer|min:1',
+            'location' => 'nullable|string|max:100',
+            'shape' => 'required|string',
+            'area_id' => 'required|exists:areas,id',
+        ]);
+        Room::create([
+            ...$validated,
+
+            'pos_x' => 100,
+            'pos_y' => 100,
+            'width' => 60,
+            'height' => 60,
+            'rotation' => 0,
+        ]);
+
+        return redirect()->route('rooms.index')->with('success', 'Habitacion sea registrado correctamente.');
     }
 
     /**
@@ -60,24 +74,57 @@ class RoomController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Room $room)
     {
-        //
+        $room->load('area');
+
+        return Inertia::render('Rooms/Edit', [
+            'room' => $room,
+            'areas' => Area::all(),
+        ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Room $room)
     {
-        //
+        if ($request->has('settings')) {
+            $validated = $request->validate([
+                'name' => 'required|string|max:50',
+                'capacity' => 'required|integer|min:1',
+                'location' => 'nullable|string|max:100',
+                'shape' => 'required|string',
+                'area_id' => 'required|exists:tenant.areas,id',
+            ]);
+
+            $room->update($validated);
+
+            return redirect()->route('rooms.index')->with('success', 'Habitacion sea restaurando correctamente');
+        }
+
+        $validated = $request->validate([
+            'pos_x' => 'nullable|integer',
+            'pos_y' => 'nullable|integer',
+            'width' => 'nullable|integer',
+            'height' => 'nullable|integer',
+            'rotation' => 'nullable|integer',
+            'area_id' => 'nullable|exists:tenant.areas,id',
+        ]);
+
+        $room->update($validated);
+
+        return back();
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Room $room)
     {
-        //
+        $room->active = 0;
+        $room->save();
+
+        return back()->with('success', 'Habitacion sea desativando correctamente');
     }
 }

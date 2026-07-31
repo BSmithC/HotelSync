@@ -13,9 +13,15 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('client_id')->constrained('clients')->references('id');
-            $table->string('room_number');
-            $table->string('description');
+            $table->string('name');
+            $table->integer('capacity');
+            $table->foreignId('area_id')->constrained('areas')->references('id');
+            $table->integer('pos_x')->nullable();
+            $table->string('shape')->default('rectangle');
+            $table->integer('pos_y')->nullable();
+            $table->integer('width')->nullable();
+            $table->integer('height')->nullable();
+            $table->integer('rotation')->nullable()->default(0);
             $table->boolean('active')->default(true);
             $table->timestamps();
         });

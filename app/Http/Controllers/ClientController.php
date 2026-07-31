@@ -74,7 +74,8 @@ class ClientController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $client = Client::findOrFail($id);
+        return Inertia::render('Clients/Show',compact('client'));
     }
 
     /**

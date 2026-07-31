@@ -67,7 +67,7 @@ export default function Index({ rooms }: { rooms: Room[] }) {
 
                 {/* Tabla / Lista */}
                 <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-                    {rooms.length > 0 ? (
+                    {rooms ? (
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">

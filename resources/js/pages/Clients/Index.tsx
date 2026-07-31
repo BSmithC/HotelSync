@@ -17,7 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Trash2, Users, RefreshCw } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, Trash2, Users, RefreshCw, Eye } from 'lucide-react';
 
 interface Client {
     id: number;
@@ -136,6 +136,12 @@ export default function Index({ clients }: { clients: Client[] }) {
                                                             <Link href={`/clients/${client.id}/edit`}>
                                                                 <Pencil className="mr-2 h-4 w-4" />
                                                                 Editar
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem asChild className="cursor-pointer">
+                                                            <Link href={`/clients/${client.id}/show`}>
+                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                Show
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         {client.active ? (

@@ -32,11 +32,6 @@ const mainNavItems: NavItem[] = [
         href: '/rooms',
         icon: HousePlug,
     },
-    {
-        title: 'Camas',
-        href: '/beds',
-        icon: BedSingle,
-    },
 ];
 
 const footerNavItems: NavItem[] = [

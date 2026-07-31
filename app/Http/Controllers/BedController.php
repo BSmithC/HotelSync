@@ -2,16 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bed;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class BedController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+
+        $query = Bed::query();
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('active', $request->status);
+        }
+
+        $beds = Bed::all();
+
+        return Inertia::render('Beds/Index', compact('beds'));
     }
 
     /**
@@ -19,7 +36,7 @@ class BedController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('Beds/Create');
     }
 
     /**
@@ -27,7 +44,13 @@ class BedController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string',
+        ]);
+
+        Bed::create($validated);
+
+        return redirect()->route('beds.index')->with('success', 'Cama Registrado Correctamente');
     }
 
     /**
