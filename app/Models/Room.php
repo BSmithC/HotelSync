@@ -12,6 +12,7 @@ class Room extends Model
         'area_id',
         'shape',
         'pos_y',
+        'pos_x',
         'width',
         'height',
         'rotation',
@@ -25,5 +26,9 @@ class Room extends Model
     public function area()
     {
         return $this->belongsTo(Area::class);
+    }
+    public function reservations()
+    {
+        return $this->belongsTo(Reservation::class);
     }
 }

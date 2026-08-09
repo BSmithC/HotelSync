@@ -17,7 +17,6 @@ export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
         name: "",
         capacity: 2,
-        location: "",
         shape: "rectangle",
         area_id: "1",
     });
@@ -86,8 +85,7 @@ export default function Create() {
                             )}
                         </div>
 
-                        {/* Capacidad y Forma en 2 columnas */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             {/* Capacidad */}
                             <div>
                                 <Label className="block text-sm font-medium mb-1.5 text-foreground">
@@ -126,22 +124,6 @@ export default function Create() {
                                     <p className="text-xs text-destructive mt-1">{errors.shape}</p>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Ubicación */}
-                        <div>
-                            <Label className="block text-sm font-medium mb-1.5 text-foreground">
-                                Ubicación / Notas
-                            </Label>
-                            <Input
-                                type="text"
-                                value={data.location}
-                                onChange={(e) => setData("location", e.target.value)}
-                                placeholder="Ej. Piso 2 - Ala Norte"
-                            />
-                            {errors.location && (
-                                <p className="text-xs text-destructive mt-1">{errors.location}</p>
-                            )}
                         </div>
 
                         {/* ID de Área */}
