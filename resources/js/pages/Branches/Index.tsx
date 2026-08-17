@@ -31,14 +31,14 @@ export default function Index({ branches }: { branches: Branch[] }) {
 
 
     const handleDelete = (id: number) => {
-        if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
-            router.delete(`/clients/${id}`);
+        if (confirm('¿Estás seguro de que deseas eliminar este surcusal?')) {
+            router.delete(`/branches/${id}`);
         }
     };
 
     const handleRestore = (id: number) => {
-        if (confirm('¿Deseas restaurar este cliente?')) {
-            router.put(`/clients/${id}`, { active: true });
+        if (confirm('¿Deseas restaurar este surcusal?')) {
+            router.put(`/branches/${id}`, { active: true });
         }
     };
 
@@ -59,7 +59,7 @@ export default function Index({ branches }: { branches: Branch[] }) {
                     </div>
 
                     <Button asChild className="w-full sm:w-auto">
-                        <Link href="/clients/create">
+                        <Link href="/branches/create">
                             <Plus className="mr-2 h-4 w-4" />
                             Nueva Surcusal
                         </Link>

@@ -139,6 +139,6 @@ class ClientController extends Controller
         $client->active = 0;
         $client->save();
 
-        return redirect()->route('clients.index')->with('success', ('Cliente desativado correctamente'));
+        return redirect()->route('clients.index')->with('success', 'Cliente desativado correctamente');
     }
 }

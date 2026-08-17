@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use function Termwind\render;
 
 class BranchController extends Controller
 {
@@ -20,7 +19,7 @@ class BranchController extends Controller
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
                     ->orWhere('description', 'like', "%{$request->search}")
-                    ->orWhere('phone', 'like', "%{$request->search}");
+                    ->orWhere('phone_number', 'like', "%{$request->search}");
             });
         }
 
@@ -51,8 +50,8 @@ class BranchController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'description' => 'required|string',
-            'phone' => 'required|string',
+            'description' => 'nullable|string',
+            'phone_number' => 'required|string',
             'status' => true,
         ]);
 
@@ -66,7 +65,8 @@ class BranchController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $branch = Branch::findOrFail($id);
+        return Inertia::render('Branches/Show',compact('branch'));
     }
 
     /**
@@ -74,7 +74,8 @@ class BranchController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $branch = Branch::findOrFail($id);
+        return Inertia::render('Branches/Edit', compact('branch'));
     }
 
     /**
@@ -82,7 +83,24 @@ class BranchController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $branch = Branch::findOrFail($id);
+
+        if ($request->has('status')) {
+            $branch->status = 1;
+            $branch->save();
+
+            return redirect()->route('branches.index')->with('success', 'Surcusal restaurando correctamente');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'description' => 'nullable|string',
+            'phone_number' => 'required|string',
+        ]);
+
+        $branch->update($validated);
+
+        return redirect()->route('branches.index')->with('success', 'Surcusal actualizando correctamente');
     }
 
     /**
@@ -90,6 +108,11 @@ class BranchController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $branch = Branch::findOrFail($id);
+
+        $branch->status = 0;
+        $branch->save();
+
+        return redirect()->route('branches.index')->with('success', 'Surcusal desativado correctamente');
     }
 }
