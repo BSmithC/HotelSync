@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $status
  * @property int|null $reported_by
  * @property int|null $resolved_by
- * @property \Carbon\CarbonImmutable|null $resolved_at
+ * @property CarbonImmutable|null $resolved_at
  * @property string|null $resolution
  */
 class Incident extends Model

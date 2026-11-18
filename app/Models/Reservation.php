@@ -3,22 +3,22 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- *
  * @property int $id
  * @property int $hotel_id
  * @property int $client_id
  * @property int $room_id
- * @property \Carbon\CarbonImmutable $reserved_at
+ * @property CarbonImmutable $reserved_at
  * @property int $guests
  * @property string|null $notes
- * @property \Carbon\CarbonImmutable|null $finished_at
- * @property \Carbon\CarbonImmutable|null $checked_in_at
- * @property \Carbon\CarbonImmutable|null $checked_out_at
+ * @property CarbonImmutable|null $finished_at
+ * @property CarbonImmutable|null $checked_in_at
+ * @property CarbonImmutable|null $checked_out_at
  * @property int|null $checked_in_by
  * @property int|null $checked_out_by
  * @property int $user_id

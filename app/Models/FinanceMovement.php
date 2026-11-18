@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $description
  * @property string|null $source_type
  * @property int|null $source_id
- * @property \Carbon\CarbonImmutable $occurred_at
+ * @property CarbonImmutable $occurred_at
  * @property int|null $reversal_of_id
  * @property int|null $created_by
  */

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,15 +25,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $quantity
  * @property string $unit_price
  * @property string $total
- * @property \Carbon\CarbonImmutable $requested_at
- * @property \Carbon\CarbonImmutable|null $completed_at
- * @property \Carbon\CarbonImmutable|null $billed_at
+ * @property CarbonImmutable $requested_at
+ * @property CarbonImmutable|null $completed_at
+ * @property CarbonImmutable|null $billed_at
  * @property string|null $notes
  * @property string|null $idempotency_key
  * @property int|null $created_by
  * @property int|null $billed_by
  * @property int|null $voided_by
- * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property CarbonImmutable|null $voided_at
  * @property string|null $void_reason
  */
 class ServiceRequest extends Model

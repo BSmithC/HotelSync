@@ -3,19 +3,19 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- *
  * @property int $id
  * @property int|null $hotel_id
  * @property int|null $room_id
  * @property int|null $reservation_id
  * @property string $title
  * @property string|null $description
- * @property \Carbon\CarbonImmutable|null $starts_at
- * @property \Carbon\CarbonImmutable|null $ends_at
+ * @property CarbonImmutable|null $starts_at
+ * @property CarbonImmutable|null $ends_at
  * @property string $type
  * @property bool $active
  */

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $from_room_id
  * @property int $to_room_id
  * @property int|null $assigned_by
- * @property \Carbon\CarbonImmutable $assigned_at
+ * @property CarbonImmutable $assigned_at
  * @property string|null $reason
  */
 class RoomAssignment extends Model

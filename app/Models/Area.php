@@ -6,7 +6,6 @@ use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- *
  * @property int $id
  * @property int|null $hotel_id
  * @property string $name

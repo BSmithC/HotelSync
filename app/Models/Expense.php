@@ -3,18 +3,18 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- *
  * @property int $id
  * @property int $hotel_id
  * @property string $category
  * @property string $description
  * @property string $amount
- * @property \Carbon\CarbonImmutable $expense_date
+ * @property CarbonImmutable $expense_date
  * @property string $method
  * @property string|null $reference
  * @property string|null $supplier
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property string|null $idempotency_key
  * @property int|null $created_by
  * @property int|null $voided_by
- * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property CarbonImmutable|null $voided_at
  * @property string|null $void_reason
  */
 class Expense extends Model

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,13 +22,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $first_name
  * @property string $last_name
  * @property string|null $cedula
- * @property \Carbon\CarbonImmutable|null $birth_date
+ * @property CarbonImmutable|null $birth_date
  * @property string|null $phone
  * @property string|null $email
  * @property string|null $address
  * @property string $position
  * @property string $department
- * @property \Carbon\CarbonImmutable $hire_date
+ * @property CarbonImmutable $hire_date
  * @property string $status
  * @property string|null $salary
  * @property string|null $bank_account

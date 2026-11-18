@@ -3,18 +3,18 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- *
  * @property int $id
  * @property int|null $hotel_id
  * @property int|null $client_id
  * @property int|null $reservation_id
  * @property string $number
- * @property \Carbon\CarbonImmutable|null $issued_at
+ * @property CarbonImmutable|null $issued_at
  * @property string $subtotal
  * @property string $tax
  * @property string $total
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $notes
  * @property bool $active
  * @property int|null $voided_by
- * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property CarbonImmutable|null $voided_at
  * @property string|null $void_reason
  */
 class Bill extends Model
