@@ -19,3 +19,32 @@ export type AuthLayoutProps = {
     title?: string;
     description?: string;
 };
+
+/**
+ * Shape of a single link produced by Laravel's LengthAwarePaginator.
+ */
+export type PaginatorLink = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+/**
+ * Flat paginator payload serialized by Laravel when a paginator is passed
+ * directly as an Inertia prop.
+ */
+export type PaginatorMeta = {
+    current_page: number;
+    data?: unknown[];
+    first_page_url?: string;
+    from: number | null;
+    last_page: number;
+    last_page_url?: string;
+    links?: PaginatorLink[];
+    next_page_url?: string | null;
+    path?: string;
+    per_page: number;
+    prev_page_url?: string | null;
+    to: number | null;
+    total: number;
+};

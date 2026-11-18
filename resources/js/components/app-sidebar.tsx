@@ -1,17 +1,23 @@
 import { Link } from '@inertiajs/react';
 import {
+    BedDouble,
     Building,
     Building2,
     CalendarCheck,
     CalendarDays,
-    HousePlug,
-    LayoutGrid,
-    Receipt,
-    User,
+    ChartBarBig,
+    ConciergeBell,
+    LayoutDashboard,
+    Package,
+    ReceiptText,
+    Settings,
+    Sparkles,
+    UserCog,
+    Users,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { HotelSwitcher } from '@/components/hotel-switcher';
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import type { NavGroup } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -25,6 +31,9 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { edit as editProfile } from '@/routes/profile';
+
+const comingSoon = 'Pronto';
 
 const navGroups: NavGroup[] = [
     {
@@ -33,7 +42,7 @@ const navGroups: NavGroup[] = [
             {
                 title: 'Dashboard',
                 href: dashboard(),
-                icon: LayoutGrid,
+                icon: LayoutDashboard,
             },
             {
                 title: 'Reservaciones',
@@ -51,19 +60,24 @@ const navGroups: NavGroup[] = [
         label: 'Gestión',
         items: [
             {
-                title: 'Clientes',
+                title: 'Huéspedes',
                 href: '/clients',
-                icon: User,
+                icon: Users,
             },
             {
                 title: 'Habitaciones',
                 href: '/rooms',
-                icon: HousePlug,
+                icon: BedDouble,
             },
+        ],
+    },
+    {
+        label: 'Finanzas',
+        items: [
             {
-                title: 'Facturas',
+                title: 'Facturación',
                 href: '/bills',
-                icon: Receipt,
+                icon: ReceiptText,
             },
         ],
     },
@@ -82,15 +96,81 @@ const navGroups: NavGroup[] = [
             },
         ],
     },
+    {
+        label: 'Próximamente',
+        items: [
+            {
+                title: 'Recepción',
+                href: '/reservations',
+                icon: ConciergeBell,
+                disabled: true,
+                badge: comingSoon,
+            },
+            {
+                title: 'Finanzas',
+                href: '/bills',
+                icon: Wallet,
+                disabled: true,
+                badge: comingSoon,
+            },
+            {
+                title: 'Inventario',
+                href: '/rooms',
+                icon: Package,
+                disabled: true,
+                badge: comingSoon,
+            },
+            {
+                title: 'Servicios',
+                href: '/rooms',
+                icon: Sparkles,
+                disabled: true,
+                badge: comingSoon,
+            },
+            {
+                title: 'Empleados',
+                href: '/settings/profile',
+                icon: UserCog,
+                disabled: true,
+                badge: comingSoon,
+            },
+            {
+                title: 'Reportes',
+                href: dashboard(),
+                icon: ChartBarBig,
+                disabled: true,
+                badge: comingSoon,
+            },
+        ],
+    },
+    {
+        label: 'Sistema',
+        items: [
+            {
+                title: 'Configuración',
+                href: editProfile(),
+                icon: Settings,
+            },
+        ],
+    },
 ];
 
 export function AppSidebar() {
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader className="gap-3 border-b border-sidebar-border/60 pb-3">
+        <Sidebar
+            collapsible="icon"
+            variant="sidebar"
+            className="border-sidebar-border"
+        >
+            <SidebarHeader className="gap-3 border-b border-sidebar-border/70 px-3 py-4">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            tooltip="HotelSync"
+                            className="h-11 px-1 hover:bg-transparent data-[state=open]:hover:bg-transparent"
+                        >
                             <Link href={dashboard()} prefetch>
                                 <AppLogo />
                             </Link>
@@ -100,12 +180,11 @@ export function AppSidebar() {
                 <HotelSwitcher />
             </SidebarHeader>
 
-            <SidebarContent className="gap-1 pt-2">
+            <SidebarContent className="gap-0 px-1 py-2">
                 <NavMain groups={navGroups} />
             </SidebarContent>
 
-            <SidebarFooter className="gap-2 border-t border-sidebar-border/60 pt-2">
-                <NavFooter items={[]} className="mt-auto" />
+            <SidebarFooter className="border-t border-sidebar-border/70 p-3">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

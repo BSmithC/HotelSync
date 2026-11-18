@@ -11,4 +11,8 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /** Modules that are not available yet are rendered but cannot be opened. */
+    disabled?: boolean;
+    /** Small label shown at the end of the item (for example "Pronto"). */
+    badge?: string;
 };

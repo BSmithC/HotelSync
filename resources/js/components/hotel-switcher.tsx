@@ -15,7 +15,7 @@ import {
 import type { HotelSharedProps, HotelSummary } from '@/types';
 
 const cardClass =
-    'h-auto rounded-xl border border-sidebar-border/70 bg-sidebar-accent/40 px-2 py-2 shadow-xs transition-colors hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none';
+    'h-auto rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-sidebar-foreground shadow-xs transition-colors hover:bg-white/10 hover:text-white data-[state=open]:bg-white/10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none';
 
 export function HotelSwitcher() {
     const { currentHotel, hotels } = usePage<HotelSharedProps>().props;
@@ -33,18 +33,18 @@ export function HotelSwitcher() {
     };
 
     const hotelIcon = (
-        <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+        <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/10">
             <Building2 className="size-4" />
         </div>
     );
 
     const label = (
-        <div className="grid flex-1 text-left leading-tight">
-            <span className="truncate text-sm font-semibold">
+        <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="truncate text-sm font-semibold text-white">
                 {currentHotel.name}
             </span>
-            <span className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
-                <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+            <span className="flex items-center gap-1.5 truncate text-[11px] text-sidebar-foreground/55">
+                <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" />
                 Hotel activo
             </span>
         </div>
@@ -79,7 +79,7 @@ export function HotelSwitcher() {
                         >
                             {hotelIcon}
                             {label}
-                            <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+                            <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/45 group-data-[collapsible=icon]:hidden" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
