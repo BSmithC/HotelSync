@@ -79,7 +79,7 @@ export function StatCard({
                     <p className="truncate text-[13px] font-medium text-muted-foreground">
                         {label}
                     </p>
-                    <p className="text-2xl font-semibold tracking-tight text-foreground">
+                    <p className="text-2xl font-semibold tracking-tight break-words text-foreground">
                         {value}
                     </p>
                     {trend && (

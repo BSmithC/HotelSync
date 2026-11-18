@@ -519,13 +519,13 @@ export default function Index({
         <>
             <Head title="Inventario" />
 
-            <div className="space-y-5">
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
                     title="Inventario"
                     description="Catálogo, existencias y libro de movimientos con ajustes trazables."
                     actions={
                         <>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Input
                                     type="date"
                                     value={filters.from}
@@ -533,7 +533,7 @@ export default function Index({
                                         visit({ from: event.target.value })
                                     }
                                     aria-label="Desde"
-                                    className="w-auto"
+                                    className="w-auto max-w-full"
                                 />
                                 <span className="text-xs text-muted-foreground">
                                     al
@@ -545,7 +545,7 @@ export default function Index({
                                         visit({ to: event.target.value })
                                     }
                                     aria-label="Hasta"
-                                    className="w-auto"
+                                    className="w-auto max-w-full"
                                 />
                             </div>
 

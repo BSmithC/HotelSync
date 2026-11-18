@@ -65,7 +65,10 @@ export function Pagination({
                 registros
             </p>
 
-            <nav aria-label="Paginación" className="flex items-center gap-1">
+            <nav
+                aria-label="Paginación"
+                className="flex flex-wrap items-center gap-1"
+            >
                 <PageLink link={previous} direction="previous" />
                 {pages.map((link, index) =>
                     link.url === null && decodeLabel(link.label) === '...' ? (

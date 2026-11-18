@@ -294,7 +294,7 @@ export default function Index({
         <>
             <Head title="Empleados" />
 
-            <div className="space-y-5">
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
                     title="Empleados"
                     description="Expedientes del equipo, datos sensibles protegidos y accesos al hotel."

@@ -511,7 +511,7 @@ export default function Index({
         <>
             <Head title="Reportes" />
 
-            <div className="space-y-5">
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6 print:p-0">
                 <PageHeader
                     title="Reportes"
                     description="Indicadores consolidados del hotel: finanzas, operación, servicios e inventario."
@@ -556,7 +556,7 @@ export default function Index({
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Input
                             type="date"
                             value={filters.from}
@@ -567,7 +567,7 @@ export default function Index({
                                 })
                             }
                             aria-label="Desde"
-                            className="w-auto"
+                            className="w-auto max-w-full"
                         />
                         <span className="text-xs text-muted-foreground">
                             al
@@ -582,7 +582,7 @@ export default function Index({
                                 })
                             }
                             aria-label="Hasta"
-                            className="w-auto"
+                            className="w-auto max-w-full"
                         />
                     </div>
                 </div>
