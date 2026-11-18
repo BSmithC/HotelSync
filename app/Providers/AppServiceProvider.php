@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Support\CurrentHotel;
+use App\Support\Permission;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -25,7 +28,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->registerPermissionGates();
         $this->configureDefaults();
+    }
+
+    /**
+     * One gate per module ability, resolved against the current hotel.
+     *
+     * Routes and controllers call `can:<ability>` or `$this->authorize()`.
+     */
+    protected function registerPermissionGates(): void
+    {
+        foreach (Permission::cases() as $permission) {
+            Gate::define(
+                $permission->value,
+                fn (User $user): bool => $user->hasPermission($permission),
+            );
+        }
     }
 
     /**

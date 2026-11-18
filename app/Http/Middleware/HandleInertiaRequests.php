@@ -44,6 +44,13 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $user,
+                'permissions' => $user === null ? [] : $user->permissionValues($currentHotel),
+                'role' => $currentHotel === null
+                    ? null
+                    : $user?->roleEnumIn($currentHotel)?->value,
+                'roleLabel' => $currentHotel === null
+                    ? null
+                    : $user?->roleEnumIn($currentHotel)?->label(),
             ],
             'currentHotel' => $currentHotel?->only(['id', 'name', 'slug']),
             'hotels' => $user === null

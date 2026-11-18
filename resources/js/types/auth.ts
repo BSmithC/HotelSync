@@ -1,3 +1,5 @@
+import type { Permission, Role } from './permission';
+
 export type User = {
     id: number;
     name: string;
@@ -11,6 +13,12 @@ export type User = {
 
 export type Auth = {
     user: User;
+    /** Abilities enabled for the user inside the current hotel. */
+    permissions: Permission[];
+    /** Role slug inside the current hotel. */
+    role: Role | null;
+    /** Human readable role label, already translated. */
+    roleLabel: string | null;
 };
 
 /* @chisel-passkeys */

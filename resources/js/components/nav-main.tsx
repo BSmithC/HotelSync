@@ -7,6 +7,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
@@ -28,8 +29,24 @@ export function NavMain({
     items?: NavItem[];
 }) {
     const { isCurrentUrl } = useCurrentUrl();
-    const sections =
-        groups.length > 0 ? groups : [{ label: fallbackLabel, items }];
+    const { can, canAny } = usePermissions();
+
+    const sections = (
+        groups.length > 0 ? groups : [{ label: fallbackLabel, items }]
+    )
+        .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => {
+                if (!item.permission) {
+                    return true;
+                }
+
+                return Array.isArray(item.permission)
+                    ? canAny(...item.permission)
+                    : can(item.permission);
+            }),
+        }))
+        .filter((section) => section.items.length > 0);
 
     return (
         <>
