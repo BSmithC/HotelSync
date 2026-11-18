@@ -33,8 +33,6 @@ import {
 import { dashboard } from '@/routes';
 import { edit as editProfile } from '@/routes/profile';
 
-const comingSoon = 'Pronto';
-
 const navGroups: NavGroup[] = [
     {
         label: 'Operación',
@@ -132,14 +130,13 @@ const navGroups: NavGroup[] = [
         ],
     },
     {
-        label: 'Próximamente',
+        label: 'Análisis',
         items: [
             {
                 title: 'Reportes',
-                href: dashboard(),
+                href: '/reports',
                 icon: ChartBarBig,
-                disabled: true,
-                badge: comingSoon,
+                permission: 'reports.view',
             },
         ],
     },

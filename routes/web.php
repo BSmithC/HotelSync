@@ -13,6 +13,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HotelSwitchController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReceptionController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ServicesController;
@@ -87,6 +88,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('{employee}', [EmployeesController::class, 'update'])->name('update');
         Route::post('{employee}/access', [EmployeesController::class, 'linkAccess'])->name('access');
         Route::delete('{employee}/access', [EmployeesController::class, 'revokeAccess'])->name('access.revoke');
+    });
+
+    // Centro de reportes: resumen, finanzas, operación, servicios e inventario.
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportsController::class, 'index'])->name('index');
+        Route::get('export', [ReportsController::class, 'export'])->name('export');
     });
 
     Route::resources([
