@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Reservation extends Model
 {
@@ -18,12 +19,30 @@ class Reservation extends Model
         'active',
     ];
 
-    public function client()
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'reserved_at' => 'datetime',
+            'finished_at' => 'datetime',
+            'active' => 'boolean',
+        ];
+    }
+
+    public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
-    public function rooms()
+
+    public function room(): BelongsTo
     {
-        return $this->hasMany(Room::class);
+        return $this->belongsTo(Room::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

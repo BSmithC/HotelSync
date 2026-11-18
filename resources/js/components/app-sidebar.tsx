@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, User, BedSingle, HousePlug, Building, HandCoins, Building2, CalendarDays} from 'lucide-react';
+import { Building2, HousePlug, LayoutGrid, User } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -28,39 +28,18 @@ const mainNavItems: NavItem[] = [
         icon: User,
     },
     {
-        title: 'Facturas',
-        href: '/bills',
-        icon: HandCoins,
-    },
-    {
-        title: 'Reservaciones',
-        href: '/reservations',
-        icon: BookOpen,
-    },
-    {
-        title: 'Calendario',
-        href: '/calendars',
-        icon: CalendarDays,
-    },
-    {
         title: 'Habitaciones',
         href: '/rooms',
         icon: HousePlug,
     },
     {
-        title: 'Edificios',
-        href: '/buildings',
-        icon: Building,
-    },
-    {
-        title: 'Surcusales',
+        title: 'Sucursales',
         href: '/branches',
         icon: Building2,
     },
 ];
 
-const footerNavItems: NavItem[] = [
-];
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     return (

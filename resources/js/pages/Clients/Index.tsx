@@ -1,14 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+    Plus,
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+    Users,
+    RefreshCw,
+    Eye,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -16,8 +17,15 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Trash2, Users, RefreshCw, Eye } from 'lucide-react';
+} from '@/components/ui/dropdown-menu';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 interface Client {
     id: number;
@@ -31,18 +39,25 @@ interface Client {
 }
 
 export default function Index({ clients }: { clients: Client[] }) {
-
     const formatCedula = (cedula: string) => {
         const clean = cedula.replace(/\D/g, '');
+
         if (clean.length === 11) {
             return `${clean.slice(0, 3)}-${clean.slice(3, 10)}-${clean.slice(10)}`;
         }
+
         return cedula;
     };
 
     const renderDocument = (client: Client) => {
-        if (client.cedula) return formatCedula(client.cedula);
-        if (client.rnc) return `RNC: ${client.rnc}`;
+        if (client.cedula) {
+            return formatCedula(client.cedula);
+        }
+
+        if (client.rnc) {
+            return `RNC: ${client.rnc}`;
+        }
+
         return '-';
     };
 
@@ -54,7 +69,7 @@ export default function Index({ clients }: { clients: Client[] }) {
 
     const handleRestore = (id: number) => {
         if (confirm('¿Deseas restaurar este cliente?')) {
-            router.put(`/clients/${id}`, { active: true });
+            router.patch(`/clients/${id}/restore`);
         }
     };
 
@@ -62,7 +77,7 @@ export default function Index({ clients }: { clients: Client[] }) {
         <>
             <Head title="Clientes" />
 
-            <div className="p-6 space-y-6">
+            <div className="space-y-6 p-6">
                 {/* Header de la vista */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -70,7 +85,8 @@ export default function Index({ clients }: { clients: Client[] }) {
                             Gestión de Clientes
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                            Administra y visualiza la lista de clientes registrados.
+                            Administra y visualiza la lista de clientes
+                            registrados.
                         </p>
                     </div>
 
@@ -83,18 +99,24 @@ export default function Index({ clients }: { clients: Client[] }) {
                 </div>
 
                 {/* Tabla / Lista */}
-                <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
                     {clients.length > 0 ? (
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[60px] text-center">#</TableHead>
+                                    <TableHead className="w-[60px] text-center">
+                                        #
+                                    </TableHead>
                                     <TableHead>Nombre Completo</TableHead>
                                     <TableHead>Cédula / RNC</TableHead>
                                     <TableHead>Teléfono</TableHead>
                                     <TableHead>Dirección</TableHead>
-                                    <TableHead className="text-center">Estado</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
+                                    <TableHead className="text-center">
+                                        Estado
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        Acciones
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -102,60 +124,104 @@ export default function Index({ clients }: { clients: Client[] }) {
                                     const isActive = Boolean(client.active);
 
                                     return (
-                                        <TableRow key={client.id} className="hover:bg-muted/30">
-                                            <TableCell className="font-medium text-center text-muted-foreground">
+                                        <TableRow
+                                            key={client.id}
+                                            className="hover:bg-muted/30"
+                                        >
+                                            <TableCell className="text-center font-medium text-muted-foreground">
                                                 {client.id}
                                             </TableCell>
                                             <TableCell className="font-semibold text-foreground">
-                                                {client.first_name} {client.last_name}
+                                                {client.first_name}{' '}
+                                                {client.last_name}
                                             </TableCell>
                                             <TableCell className="font-mono text-sm">
                                                 {renderDocument(client)}
                                             </TableCell>
-                                            <TableCell>{client.phone_number}</TableCell>
-                                            <TableCell className="max-w-[200px] truncate" title={client.address}>
+                                            <TableCell>
+                                                {client.phone_number}
+                                            </TableCell>
+                                            <TableCell
+                                                className="max-w-[200px] truncate"
+                                                title={client.address}
+                                            >
                                                 {client.address}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={isActive ? "default" : "secondary"}>
-                                                    {isActive ? 'Activo' : 'Inactivo'}
+                                                <Badge
+                                                    variant={
+                                                        isActive
+                                                            ? 'default'
+                                                            : 'secondary'
+                                                    }
+                                                >
+                                                    {isActive
+                                                        ? 'Activo'
+                                                        : 'Inactivo'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Abrir menú</span>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <span className="sr-only">
+                                                                Abrir menú
+                                                            </span>
                                                             <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Opciones</DropdownMenuLabel>
+                                                        <DropdownMenuLabel>
+                                                            Opciones
+                                                        </DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem asChild className="cursor-pointer">
-                                                            <Link href={`/clients/${client.id}/edit`}>
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                            className="cursor-pointer"
+                                                        >
+                                                            <Link
+                                                                href={`/clients/${client.id}/edit`}
+                                                            >
                                                                 <Pencil className="mr-2 h-4 w-4" />
                                                                 Editar
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem asChild className="cursor-pointer">
-                                                            <Link href={`/clients/${client.id}/show`}>
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                            className="cursor-pointer"
+                                                        >
+                                                            <Link
+                                                                href={`/clients/${client.id}`}
+                                                            >
                                                                 <Eye className="mr-2 h-4 w-4" />
                                                                 Show
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         {client.active ? (
                                                             <DropdownMenuItem
-                                                                onClick={() => handleDelete(client.id)}
-                                                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        client.id,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer text-red-600 focus:text-red-600"
                                                             >
                                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                                 Eliminar
                                                             </DropdownMenuItem>
                                                         ) : (
                                                             <DropdownMenuItem
-                                                                onClick={() => handleRestore(client.id)}
-                                                                className="text-emerald-600 focus:text-emerald-600 cursor-pointer"
+                                                                onClick={() =>
+                                                                    handleRestore(
+                                                                        client.id,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer text-emerald-600 focus:text-emerald-600"
                                                             >
                                                                 <RefreshCw className="mr-2 h-4 w-4" />
                                                                 Restaurar
@@ -171,13 +237,16 @@ export default function Index({ clients }: { clients: Client[] }) {
                         </Table>
                     ) : (
                         /* Estado vacio */
-                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                        <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                                 <Users className="h-6 w-6 text-muted-foreground" />
                             </div>
-                            <h3 className="text-lg font-semibold text-foreground">No hay clientes registrados</h3>
-                            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                                Comienza agregando tu primer cliente haciendo clic en el botón de arriba a la derecha.
+                            <h3 className="text-lg font-semibold text-foreground">
+                                No hay clientes registrados
+                            </h3>
+                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                                Comienza agregando tu primer cliente haciendo
+                                clic en el botón de arriba a la derecha.
                             </p>
                         </div>
                     )}

@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class ClientController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $query = Client::query();
 
@@ -27,18 +29,21 @@ class ClientController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('active', $request->status);
+            $query->where('active', $request->boolean('status'));
         }
 
-        $clients = Client::all();
+        $clients = $query->latest('id')->get();
 
-        return Inertia::render('Clients/Index', compact('clients'));
+        return Inertia::render('Clients/Index', [
+            'clients' => $clients,
+            'filters' => $request->only(['search', 'status']),
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Response
     {
         return Inertia::render('Clients/Create');
     }
@@ -46,7 +51,7 @@ class ClientController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $cedula = $request->filled('cedula') ? preg_replace('/[^0-9]/', '', $request->cedula) : null;
         $rnc = $request->filled('rnc') ? preg_replace('/[^0-9]/', '', $request->rnc) : null;
@@ -64,24 +69,28 @@ class ClientController extends Controller
             'address' => 'required|string',
             'phone_number' => 'required|string',
         ]);
+
         Client::create($validated);
 
-        return redirect()->route('clients.index')->with('success', 'Cliente Registrado Correctamente');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cliente registrado correctamente.']);
+
+        return to_route('clients.index');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): Response
     {
         $client = Client::findOrFail($id);
-        return Inertia::render('Clients/Show',compact('client'));
+
+        return Inertia::render('Clients/Show', compact('client'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $id): Response
     {
         $client = Client::findOrFail($id);
 
@@ -91,22 +100,17 @@ class ClientController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): RedirectResponse
     {
         $client = Client::findOrFail($id);
 
-        if ($request->has('active')) {
-            $client->active = 1;
-            $client->save();
-
-            return redirect()->route('clients.index')->with('success', ('Cliente restaurando correctamente'));
-        }
         if ($request->has('cedula') && ! empty($request->cedula)) {
             $request->merge(['cedula' => preg_replace('/[^0-9]/', '', $request->cedula)]);
         }
         if ($request->has('rnc') && ! empty($request->rnc)) {
             $request->merge(['rnc' => preg_replace('/[^0-9]/', '', $request->rnc)]);
         }
+
         $cedula = $request->filled('cedula') ? preg_replace('/[^0-9]/', '', $request->cedula) : null;
         $rnc = $request->filled('rnc') ? preg_replace('/[^0-9]/', '', $request->rnc) : null;
 
@@ -119,26 +123,41 @@ class ClientController extends Controller
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'cedula' => 'nullable|required_without:rnc|regex:/^[0-9]{11}$/|unique:clients,cedula,'.$client->id,
-            'rnc' => 'nullable|required_without:cedula|regex:/^[0-9]{9}$/|unique:clients,rnc,'.$client->id,
+            'rnc' => 'nullable|required_without:cedula|regex:/^([0-9]{9}|[0-9]{11})$/|unique:clients,rnc,'.$client->id,
             'address' => 'required|string',
             'phone_number' => 'required|string',
         ]);
 
         $client->update($validated);
 
-        return redirect()->route('clients.index')->with('success', 'Cliente actualizado correctamente');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cliente actualizado correctamente.']);
+
+        return to_route('clients.index');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deactivate the specified resource (soft delete through the active flag).
      */
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
         $client = Client::findOrFail($id);
 
-        $client->active = 0;
-        $client->save();
+        $client->update(['active' => false]);
 
-        return redirect()->route('clients.index')->with('success', 'Cliente desativado correctamente');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cliente desactivado correctamente.']);
+
+        return to_route('clients.index');
+    }
+
+    /**
+     * Restore a previously deactivated client.
+     */
+    public function restore(Client $client): RedirectResponse
+    {
+        $client->update(['active' => true]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Cliente restaurado correctamente.']);
+
+        return to_route('clients.index');
     }
 }

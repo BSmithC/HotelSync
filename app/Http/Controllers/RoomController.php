@@ -4,32 +4,33 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use App\Models\Room;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class RoomController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
-        $query = Room::query();
+        $areas = Area::orderBy('name')->get();
 
-        if ($request->filled('status')) {
-            $query->where('active', $request->status);
-        }
-
-        $areas = Area::all();
-        // Si hay un area_id en el request, la seleccionamos, si no, tomamos la primera
         $currentArea = $request->filled('area_id')
-            ? $areas->firstWhere('id', $request->area_id)
+            ? $areas->firstWhere('id', (int) $request->input('area_id'))
             : $areas->first();
 
-        // Filtramos las habitaciones por el área seleccionada
-        $rooms = $currentArea ? Room::where('area_id', $currentArea->id)->get() : [];
+        $currentArea ??= $areas->first();
 
-        $rooms = Room::all();
+        $rooms = $currentArea
+            ? Room::with('area')
+                ->where('area_id', $currentArea->id)
+                ->when($request->filled('status'), fn ($query) => $query->where('active', $request->boolean('status')))
+                ->orderBy('name')
+                ->get()
+            : collect();
 
         return Inertia::render('Rooms/Index', [
             'areas' => $areas,
@@ -41,28 +42,31 @@ class RoomController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Response
     {
         return Inertia::render('Rooms/Create', [
-            'areas' => Area::all(),
+            'areas' => Area::orderBy('name')->get(),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:50',
             'capacity' => 'required|integer|min:1',
-            'location' => 'nullable|string|max:100',
-            'shape' => 'required|string',
+            'shape' => 'required|string|max:30',
             'area_id' => 'required|exists:areas,id',
+            'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'phone' => 'nullable|string|max:50',
+            'status' => 'nullable|string|max:30',
         ]);
+
         Room::create([
             ...$validated,
-
             'pos_x' => 100,
             'pos_y' => 100,
             'width' => 60,
@@ -70,47 +74,58 @@ class RoomController extends Controller
             'rotation' => 0,
         ]);
 
-        return redirect()->route('rooms.index')->with('success', 'Habitacion sea registrado correctamente.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La habitación se registró correctamente.']);
+
+        return to_route('rooms.index');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Room $room): Response
     {
-        //
+        $room->load('area');
+
+        return Inertia::render('Rooms/Show', [
+            'room' => $room,
+        ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Room $room)
+    public function edit(Room $room): Response
     {
         $room->load('area');
 
         return Inertia::render('Rooms/Edit', [
             'room' => $room,
-            'areas' => Area::all(),
+            'areas' => Area::orderBy('name')->get(),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Room $room)
+    public function update(Request $request, Room $room): RedirectResponse
     {
-        if ($request->has('settings')) {
+        if ($request->boolean('settings')) {
             $validated = $request->validate([
                 'name' => 'required|string|max:50',
                 'capacity' => 'required|integer|min:1',
-                'location' => 'nullable|string|max:100',
-                'shape' => 'required|string',
-                'area_id' => 'required|exists:tenant.areas,id',
+                'shape' => 'required|string|max:30',
+                'area_id' => 'required|exists:areas,id',
+                'description' => 'nullable|string',
+                'price' => 'nullable|numeric|min:0',
+                'phone' => 'nullable|string|max:50',
+                'status' => 'nullable|string|max:30',
             ]);
 
             $room->update($validated);
 
-            return redirect()->route('rooms.index')->with('success', 'Habitacion sea restaurando correctamente');
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'La habitación se actualizó correctamente.']);
+
+            return to_route('rooms.index');
         }
 
         $validated = $request->validate([
@@ -119,7 +134,7 @@ class RoomController extends Controller
             'width' => 'nullable|integer',
             'height' => 'nullable|integer',
             'rotation' => 'nullable|integer',
-            'area_id' => 'nullable|exists:tenant.areas,id',
+            'area_id' => 'nullable|exists:areas,id',
         ]);
 
         $room->update($validated);
@@ -128,13 +143,14 @@ class RoomController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deactivate the specified resource.
      */
-    public function destroy(Room $room)
+    public function destroy(Room $room): RedirectResponse
     {
-        $room->active = 0;
-        $room->save();
+        $room->update(['active' => false]);
 
-        return back()->with('success', 'Habitacion sea desativando correctamente');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La habitación se desactivó correctamente.']);
+
+        return to_route('rooms.index');
     }
 }

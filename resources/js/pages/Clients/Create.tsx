@@ -1,33 +1,40 @@
 import { Head, useForm, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import React, { useState } from 'react';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function Create() {
     const [docType, setDocType] = useState<'cedula' | 'rnc'>('cedula');
 
     const { data, setData, post, processing, errors, transform } = useForm({
-        first_name: "",
-        last_name: "",
-        cedula: "",
-        rnc: "",
-        address: "",
-        phone_number: "",
+        first_name: '',
+        last_name: '',
+        cedula: '',
+        rnc: '',
+        address: '',
+        phone_number: '',
     });
 
     const formatCedula = (value: string) => {
         const digits = value.replace(/\D/g, '').slice(0, 11);
-        if (digits.length <= 3) return digits;
-        if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+
+        if (digits.length <= 3) {
+            return digits;
+        }
+
+        if (digits.length <= 10) {
+            return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+        }
+
         return `${digits.slice(0, 3)}-${digits.slice(3, 10)}-${digits.slice(10)}`;
     };
 
@@ -37,6 +44,7 @@ export default function Create() {
 
     const handleDocTypeChange = (type: 'cedula' | 'rnc') => {
         setDocType(type);
+
         if (type === 'cedula') {
             setData((prev) => ({ ...prev, rnc: '' }));
         } else {
@@ -49,8 +57,14 @@ export default function Create() {
 
         transform((prevData) => ({
             ...prevData,
-            cedula: docType === 'cedula' && prevData.cedula ? prevData.cedula.replace(/\D/g, '') : null,
-            rnc: docType === 'rnc' && prevData.rnc ? prevData.rnc.replace(/\D/g, '') : null,
+            cedula:
+                docType === 'cedula' && prevData.cedula
+                    ? prevData.cedula.replace(/\D/g, '')
+                    : null,
+            rnc:
+                docType === 'rnc' && prevData.rnc
+                    ? prevData.rnc.replace(/\D/g, '')
+                    : null,
         }));
 
         post('/clients');
@@ -71,47 +85,63 @@ export default function Create() {
                             {/* Nombre */}
                             <div className="space-y-2">
                                 <Label htmlFor="first_name">
-                                    Nombre <span className="text-red-500">*</span>
+                                    Nombre{' '}
+                                    <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="first_name"
                                     placeholder="Juan"
                                     value={data.first_name}
-                                    onChange={e => setData('first_name', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('first_name', e.target.value)
+                                    }
                                 />
                                 {errors.first_name && (
-                                    <p className="text-sm text-red-500">{errors.first_name}</p>
+                                    <p className="text-sm text-red-500">
+                                        {errors.first_name}
+                                    </p>
                                 )}
                             </div>
 
                             {/* Apellido */}
                             <div className="space-y-2">
                                 <Label htmlFor="last_name">
-                                    Apellido <span className="text-red-500">*</span>
+                                    Apellido{' '}
+                                    <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="last_name"
                                     placeholder="Pérez"
                                     value={data.last_name}
-                                    onChange={e => setData('last_name', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('last_name', e.target.value)
+                                    }
                                 />
                                 {errors.last_name && (
-                                    <p className="text-sm text-red-500">{errors.last_name}</p>
+                                    <p className="text-sm text-red-500">
+                                        {errors.last_name}
+                                    </p>
                                 )}
                             </div>
 
                             {/* Seleccionar Tipo de Documento */}
                             <div className="space-y-2">
-                                <Label htmlFor="doc_type">Tipo de Documento</Label>
+                                <Label htmlFor="doc_type">
+                                    Tipo de Documento
+                                </Label>
                                 <Select
                                     value={docType}
-                                    onValueChange={(val: 'cedula' | 'rnc') => handleDocTypeChange(val)}
+                                    onValueChange={(val: 'cedula' | 'rnc') =>
+                                        handleDocTypeChange(val)
+                                    }
                                 >
                                     <SelectTrigger id="doc_type">
                                         <SelectValue placeholder="Selecciona un documento" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="cedula">Cédula</SelectItem>
+                                        <SelectItem value="cedula">
+                                            Cédula
+                                        </SelectItem>
                                         <SelectItem value="rnc">RNC</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -121,31 +151,47 @@ export default function Create() {
                             {docType === 'cedula' ? (
                                 <div className="space-y-2">
                                     <Label htmlFor="cedula">
-                                        Cédula <span className="text-red-500">*</span>
+                                        Cédula{' '}
+                                        <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
                                         id="cedula"
                                         placeholder="402-0000000-0"
                                         value={data.cedula}
-                                        onChange={(e) => setData('cedula', formatCedula(e.target.value))}
+                                        onChange={(e) =>
+                                            setData(
+                                                'cedula',
+                                                formatCedula(e.target.value),
+                                            )
+                                        }
                                     />
                                     {errors.cedula && (
-                                        <p className="text-sm text-red-500">{errors.cedula}</p>
+                                        <p className="text-sm text-red-500">
+                                            {errors.cedula}
+                                        </p>
                                     )}
                                 </div>
                             ) : (
                                 <div className="space-y-2">
                                     <Label htmlFor="rnc">
-                                        RNC <span className="text-red-500">*</span>
+                                        RNC{' '}
+                                        <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
                                         id="rnc"
                                         placeholder="101000000 o 40200000000"
                                         value={data.rnc}
-                                        onChange={(e) => setData('rnc', formatRNC(e.target.value))}
+                                        onChange={(e) =>
+                                            setData(
+                                                'rnc',
+                                                formatRNC(e.target.value),
+                                            )
+                                        }
                                     />
                                     {errors.rnc && (
-                                        <p className="text-sm text-red-500">{errors.rnc}</p>
+                                        <p className="text-sm text-red-500">
+                                            {errors.rnc}
+                                        </p>
                                     )}
                                 </div>
                             )}
@@ -153,16 +199,21 @@ export default function Create() {
                             {/* Teléfono */}
                             <div className="space-y-2 md:col-span-2">
                                 <Label htmlFor="phone_number">
-                                    Teléfono <span className="text-red-500">*</span>
+                                    Teléfono{' '}
+                                    <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="phone_number"
                                     placeholder="809-000-0000"
                                     value={data.phone_number}
-                                    onChange={e => setData('phone_number', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('phone_number', e.target.value)
+                                    }
                                 />
                                 {errors.phone_number && (
-                                    <p className="text-sm text-red-500">{errors.phone_number}</p>
+                                    <p className="text-sm text-red-500">
+                                        {errors.phone_number}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -170,27 +221,42 @@ export default function Create() {
                         {/* Dirección */}
                         <div className="space-y-2">
                             <Label htmlFor="address">
-                                Dirección <span className="text-red-500">*</span>
+                                Dirección{' '}
+                                <span className="text-red-500">*</span>
                             </Label>
                             <Textarea
                                 id="address"
                                 placeholder="Calle Duarte #12"
                                 value={data.address}
-                                onChange={e => setData('address', e.target.value)}
+                                onChange={(e) =>
+                                    setData('address', e.target.value)
+                                }
                             />
                             {errors.address && (
-                                <p className="text-sm text-red-500">{errors.address}</p>
+                                <p className="text-sm text-red-500">
+                                    {errors.address}
+                                </p>
                             )}
                         </div>
 
                         {/* Botones de Acción */}
-                        <div className="flex justify-end pt-2 gap-4">
-                            <Button variant="outline" asChild className="w-full sm:w-auto">
+                        <div className="flex justify-end gap-4 pt-2">
+                            <Button
+                                variant="outline"
+                                asChild
+                                className="w-full sm:w-auto"
+                            >
                                 <Link href="/clients">Cancelar</Link>
                             </Button>
 
-                            <Button type="submit" disabled={processing} className="w-full sm:w-auto">
-                                {processing ? 'Guardando...' : 'Guardar Cliente'}
+                            <Button
+                                type="submit"
+                                disabled={processing}
+                                className="w-full sm:w-auto"
+                            >
+                                {processing
+                                    ? 'Guardando...'
+                                    : 'Guardar Cliente'}
                             </Button>
                         </div>
                     </form>

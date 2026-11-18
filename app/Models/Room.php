@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Room extends Model
 {
@@ -17,24 +19,30 @@ class Room extends Model
         'height',
         'rotation',
         'active',
-
-        //detalles
         'description',
         'price',
         'phone',
-        'status'
+        'status',
     ];
 
-    public function client()
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
     {
-        return $this->belongsTo(Client::class);
+        return [
+            'active' => 'boolean',
+            'price' => 'decimal:2',
+        ];
     }
-    public function area()
+
+    public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
     }
-    public function reservations()
+
+    public function reservations(): HasMany
     {
-        return $this->belongsTo(Reservation::class);
+        return $this->hasMany(Reservation::class);
     }
 }

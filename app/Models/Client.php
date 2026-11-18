@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
@@ -16,11 +16,18 @@ class Client extends Model
         'phone_number',
         'active',
     ];
-    public function rooms()
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
     {
-        return $this->hasMany(Room::class);
+        return [
+            'active' => 'boolean',
+        ];
     }
-    public function reservation()
+
+    public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
     }

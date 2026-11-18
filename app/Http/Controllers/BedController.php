@@ -3,85 +3,110 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bed;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class BedController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(): Response
     {
-
-        $query = Bed::query();
-
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%");
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('active', $request->status);
-        }
-
-        $beds = Bed::all();
-
-        return Inertia::render('Beds/Index', compact('beds'));
+        return Inertia::render('coming-soon', [
+            'title' => 'Camas',
+            'description' => 'La administración de camas se habilitará junto con el plano de habitaciones.',
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Response
     {
-        return Inertia::render('Beds/Create');
+        return $this->index();
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:50',
+            'area_id' => 'required|exists:areas,id',
+            'capacity' => 'required|integer|min:1',
+            'shape' => 'nullable|string|max:30',
         ]);
 
-        Bed::create($validated);
+        Bed::create([
+            ...$validated,
+            'shape' => $validated['shape'] ?? 'circle',
+            'pos_x' => 0,
+            'pos_y' => 0,
+            'width' => 40,
+            'height' => 40,
+            'rotation' => 0,
+        ]);
 
-        return redirect()->route('beds.index')->with('success', 'Cama Registrado Correctamente');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La cama se registró correctamente.']);
+
+        return to_route('beds.index');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): Response
     {
-        //
+        return $this->index();
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $id): Response
     {
-        //
+        return $this->index();
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): RedirectResponse
     {
-        //
+        $bed = Bed::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:50',
+            'area_id' => 'sometimes|exists:areas,id',
+            'capacity' => 'sometimes|integer|min:1',
+            'shape' => 'nullable|string|max:30',
+            'pos_x' => 'nullable|integer',
+            'pos_y' => 'nullable|integer',
+            'width' => 'nullable|integer',
+            'height' => 'nullable|integer',
+            'rotation' => 'nullable|integer',
+        ]);
+
+        $bed->update($validated);
+
+        return back();
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deactivate the specified resource.
      */
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
-        //
+        $bed = Bed::findOrFail($id);
+
+        $bed->update(['active' => false]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La cama se desactivó correctamente.']);
+
+        return back();
     }
 }
