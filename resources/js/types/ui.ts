@@ -48,3 +48,20 @@ export type PaginatorMeta = {
     to: number | null;
     total: number;
 };
+
+/**
+ * Laravel paginator payload with a typed data array.
+ */
+export type Paginated<T> = Omit<PaginatorMeta, 'data'> & {
+    data: T[];
+};
+
+/**
+ * Query-string filters shared by the list indexes.
+ */
+export type ListFiltersState = {
+    search?: string | null;
+    status?: string | null;
+    state?: string | null;
+    type?: string | null;
+};

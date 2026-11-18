@@ -15,6 +15,13 @@ use Inertia\Response;
 class BillController extends Controller
 {
     /**
+     * Bill statuses accepted by the list filter.
+     *
+     * @var list<string>
+     */
+    private const STATUSES = ['Pendiente', 'Pagada', 'Anulada'];
+
+    /**
      * Validation rules shared by store and update.
      *
      * The client and the reservation must belong to the current hotel, and
@@ -65,9 +72,15 @@ class BillController extends Controller
             $query->where('active', $request->boolean('status'));
         }
 
+        $state = $request->string('state')->toString();
+
+        if (in_array($state, self::STATUSES, true)) {
+            $query->where('status', $state);
+        }
+
         return Inertia::render('Bills/Index', [
-            'bills' => $query->latest('id')->get(),
-            'filters' => $request->only(['search', 'status']),
+            'bills' => $query->latest('id')->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search', 'status', 'state']),
         ]);
     }
 

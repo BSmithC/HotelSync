@@ -29,11 +29,9 @@ class BranchController extends Controller
             $query->where('status', $request->boolean('status'));
         }
 
-        $branches = $query->latest('id')->get();
-
         return Inertia::render('Branches/Index', [
             'filters' => $request->only(['search', 'status']),
-            'branches' => $branches,
+            'branches' => $query->latest('id')->paginate(10)->withQueryString(),
         ]);
     }
 

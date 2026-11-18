@@ -79,8 +79,8 @@ it('lists only the clients that belong to the current hotel', function () {
         ->get('/clients')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->has('clients', 1)
-            ->where('clients.0.first_name', 'Norte'));
+            ->has('clients.data', 1)
+            ->where('clients.data.0.first_name', 'Norte'));
 });
 
 it('returns 404 for clients of another hotel', function () {
@@ -222,8 +222,8 @@ it('switches the active hotel for members and refuses everyone else', function (
         ->get('/clients')
         ->assertInertia(fn ($page) => $page
             ->where('currentHotel.id', $south->id)
-            ->has('clients', 1)
-            ->where('clients.0.first_name', 'Sur'));
+            ->has('clients.data', 1)
+            ->where('clients.data.0.first_name', 'Sur'));
 
     $outsider = tenantUser($north);
 

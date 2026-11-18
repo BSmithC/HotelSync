@@ -1,31 +1,25 @@
-import { Head, Link, router } from '@inertiajs/react';
-import {
-    Plus,
-    MoreHorizontal,
-    Pencil,
-    Trash2,
-    Users,
-    RefreshCw,
-    Eye,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Head, Link } from '@inertiajs/react';
+import { Eye, Pencil, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { DataTable } from '@/components/data-table';
+import type { DataTableColumn } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
+import { ListFilters } from '@/components/list-filters';
+import { PageHeader } from '@/components/page-header';
+import { Pagination } from '@/components/pagination';
+import { RowActions } from '@/components/row-actions';
+import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import { useRecordAction } from '@/hooks/use-record-action';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    create as createClient,
+    destroy as destroyClient,
+    edit as editClient,
+    index as clientsIndex,
+    restore as restoreClient,
+    show as showClient,
+} from '@/routes/clients';
+import type { ListFiltersState, Paginated } from '@/types';
 
 interface Client {
     id: number;
@@ -35,223 +29,236 @@ interface Client {
     rnc?: string | null;
     address: string;
     phone_number: string;
-    active: boolean | number | string;
+    active: boolean;
 }
 
-export default function Index({ clients }: { clients: Client[] }) {
-    const formatCedula = (cedula: string) => {
-        const clean = cedula.replace(/\D/g, '');
+const statusOptions = [
+    { value: '1', label: 'Activos' },
+    { value: '0', label: 'Inactivos' },
+];
 
-        if (clean.length === 11) {
-            return `${clean.slice(0, 3)}-${clean.slice(3, 10)}-${clean.slice(10)}`;
-        }
+function formatCedula(cedula: string): string {
+    const clean = cedula.replace(/\D/g, '');
 
-        return cedula;
-    };
+    if (clean.length === 11) {
+        return `${clean.slice(0, 3)}-${clean.slice(3, 10)}-${clean.slice(10)}`;
+    }
 
-    const renderDocument = (client: Client) => {
-        if (client.cedula) {
-            return formatCedula(client.cedula);
-        }
+    return cedula;
+}
 
-        if (client.rnc) {
-            return `RNC: ${client.rnc}`;
-        }
+function renderDocument(client: Client): string {
+    if (client.cedula) {
+        return formatCedula(client.cedula);
+    }
 
-        return '-';
-    };
+    if (client.rnc) {
+        return `RNC: ${client.rnc}`;
+    }
 
-    const handleDelete = (id: number) => {
-        if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
-            router.delete(`/clients/${id}`);
-        }
-    };
+    return '—';
+}
 
-    const handleRestore = (id: number) => {
-        if (confirm('¿Deseas restaurar este cliente?')) {
-            router.patch(`/clients/${id}/restore`);
-        }
-    };
+export default function Index({
+    clients,
+    filters,
+}: {
+    clients: Paginated<Client>;
+    filters: ListFiltersState;
+}) {
+    const recordAction = useRecordAction({
+        destroy: destroyClient,
+        restore: restoreClient,
+    });
+
+    const hasFilters = Boolean(filters.search || filters.status);
+
+    const columns: DataTableColumn<Client>[] = [
+        {
+            id: 'client',
+            header: 'Cliente',
+            cell: (client) => (
+                <div className="min-w-0">
+                    <Link
+                        href={showClient(client.id)}
+                        className="font-medium text-foreground transition-colors hover:text-primary"
+                    >
+                        {client.first_name} {client.last_name}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        {client.phone_number}
+                    </p>
+                </div>
+            ),
+        },
+        {
+            id: 'document',
+            header: 'Documento',
+            cell: (client) => (
+                <span className="font-mono text-sm">
+                    {renderDocument(client)}
+                </span>
+            ),
+        },
+        {
+            id: 'address',
+            header: 'Dirección',
+            cell: (client) => (
+                <span
+                    className="block max-w-56 truncate text-muted-foreground"
+                    title={client.address}
+                >
+                    {client.address || '—'}
+                </span>
+            ),
+        },
+        {
+            id: 'status',
+            header: 'Estado',
+            align: 'center',
+            cell: (client) => (
+                <StatusBadge status={client.active ? 'Activo' : 'Inactivo'} />
+            ),
+        },
+        {
+            id: 'actions',
+            header: 'Acciones',
+            align: 'right',
+            cell: (client) => {
+                const name = `${client.first_name} ${client.last_name}`;
+
+                return (
+                    <RowActions
+                        actions={[
+                            {
+                                label: 'Editar',
+                                icon: Pencil,
+                                href: editClient(client.id),
+                            },
+                            {
+                                label: 'Ver detalle',
+                                icon: Eye,
+                                href: showClient(client.id),
+                            },
+                            client.active
+                                ? {
+                                      label: 'Desactivar',
+                                      icon: Trash2,
+                                      destructive: true,
+                                      onSelect: () =>
+                                          recordAction.request({
+                                              id: client.id,
+                                              action: 'delete',
+                                              name,
+                                          }),
+                                  }
+                                : {
+                                      label: 'Restaurar',
+                                      icon: RefreshCw,
+                                      success: true,
+                                      onSelect: () =>
+                                          recordAction.request({
+                                              id: client.id,
+                                              action: 'restore',
+                                              name,
+                                          }),
+                                  },
+                        ]}
+                    />
+                );
+            },
+        },
+    ];
+
+    const pending = recordAction.pending;
+    const isDelete = pending?.action === 'delete';
 
     return (
         <>
             <Head title="Clientes" />
 
-            <div className="space-y-6 p-6">
-                {/* Header de la vista */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold tracking-tight text-foreground">
-                            Gestión de Clientes
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            Administra y visualiza la lista de clientes
-                            registrados.
-                        </p>
-                    </div>
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+                <PageHeader
+                    title="Clientes"
+                    description="Administra los huéspedes y clientes registrados en el hotel."
+                    actions={
+                        <Button asChild>
+                            <Link href={createClient()}>
+                                <Plus className="size-4" />
+                                Nuevo cliente
+                            </Link>
+                        </Button>
+                    }
+                />
 
-                    <Button asChild className="w-full sm:w-auto">
-                        <Link href="/clients/create">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nuevo Cliente
-                        </Link>
-                    </Button>
-                </div>
+                <ListFilters
+                    url={clientsIndex.url()}
+                    search={filters.search}
+                    searchPlaceholder="Buscar por nombre, documento o teléfono"
+                    selects={[
+                        {
+                            key: 'status',
+                            label: 'Estado',
+                            options: statusOptions,
+                            value: filters.status,
+                        },
+                    ]}
+                />
 
-                {/* Tabla / Lista */}
-                <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                    {clients.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[60px] text-center">
-                                        #
-                                    </TableHead>
-                                    <TableHead>Nombre Completo</TableHead>
-                                    <TableHead>Cédula / RNC</TableHead>
-                                    <TableHead>Teléfono</TableHead>
-                                    <TableHead>Dirección</TableHead>
-                                    <TableHead className="text-center">
-                                        Estado
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                        Acciones
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {clients.map((client) => {
-                                    const isActive = Boolean(client.active);
-
-                                    return (
-                                        <TableRow
-                                            key={client.id}
-                                            className="hover:bg-muted/30"
-                                        >
-                                            <TableCell className="text-center font-medium text-muted-foreground">
-                                                {client.id}
-                                            </TableCell>
-                                            <TableCell className="font-semibold text-foreground">
-                                                {client.first_name}{' '}
-                                                {client.last_name}
-                                            </TableCell>
-                                            <TableCell className="font-mono text-sm">
-                                                {renderDocument(client)}
-                                            </TableCell>
-                                            <TableCell>
-                                                {client.phone_number}
-                                            </TableCell>
-                                            <TableCell
-                                                className="max-w-[200px] truncate"
-                                                title={client.address}
-                                            >
-                                                {client.address}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge
-                                                    variant={
-                                                        isActive
-                                                            ? 'default'
-                                                            : 'secondary'
-                                                    }
-                                                >
-                                                    {isActive
-                                                        ? 'Activo'
-                                                        : 'Inactivo'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            className="h-8 w-8 p-0"
-                                                        >
-                                                            <span className="sr-only">
-                                                                Abrir menú
-                                                            </span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>
-                                                            Opciones
-                                                        </DropdownMenuLabel>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            asChild
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Link
-                                                                href={`/clients/${client.id}/edit`}
-                                                            >
-                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                Editar
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            asChild
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <Link
-                                                                href={`/clients/${client.id}`}
-                                                            >
-                                                                <Eye className="mr-2 h-4 w-4" />
-                                                                Show
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                        {client.active ? (
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        client.id,
-                                                                    )
-                                                                }
-                                                                className="cursor-pointer text-red-600 focus:text-red-600"
-                                                            >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Eliminar
-                                                            </DropdownMenuItem>
-                                                        ) : (
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    handleRestore(
-                                                                        client.id,
-                                                                    )
-                                                                }
-                                                                className="cursor-pointer text-emerald-600 focus:text-emerald-600"
-                                                            >
-                                                                <RefreshCw className="mr-2 h-4 w-4" />
-                                                                Restaurar
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        /* Estado vacio */
-                        <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                <Users className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground">
-                                No hay clientes registrados
-                            </h3>
-                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                                Comienza agregando tu primer cliente haciendo
-                                clic en el botón de arriba a la derecha.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                <DataTable
+                    caption="Clientes registrados"
+                    columns={columns}
+                    rows={clients.data}
+                    rowKey={(client) => client.id}
+                    empty={
+                        <EmptyState
+                            icon={Users}
+                            title={
+                                hasFilters
+                                    ? 'Sin resultados'
+                                    : 'No hay clientes registrados'
+                            }
+                            description={
+                                hasFilters
+                                    ? 'Ajusta la búsqueda o el estado para encontrar el cliente que buscas.'
+                                    : 'Registra el primer huésped para empezar a crear reservaciones.'
+                            }
+                            action={
+                                !hasFilters && (
+                                    <Button asChild>
+                                        <Link href={createClient()}>
+                                            <Plus className="size-4" />
+                                            Nuevo cliente
+                                        </Link>
+                                    </Button>
+                                )
+                            }
+                        />
+                    }
+                    footer={<Pagination meta={clients} />}
+                />
             </div>
+
+            <ConfirmDialog
+                open={pending !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        recordAction.close();
+                    }
+                }}
+                title={isDelete ? 'Desactivar cliente' : 'Restaurar cliente'}
+                description={
+                    pending
+                        ? isDelete
+                            ? `El cliente "${pending.name}" quedará inactivo hasta que lo restaures.`
+                            : `El cliente "${pending.name}" volverá a estar activo.`
+                        : undefined
+                }
+                confirmLabel={isDelete ? 'Desactivar' : 'Restaurar'}
+                destructive={isDelete}
+                processing={recordAction.processing}
+                onConfirm={recordAction.confirm}
+            />
         </>
     );
 }

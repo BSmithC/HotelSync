@@ -15,6 +15,13 @@ use Inertia\Response;
 class CalendarController extends Controller
 {
     /**
+     * Event types accepted by the list filter.
+     *
+     * @var list<string>
+     */
+    private const TYPES = ['evento', 'bloqueo', 'mantenimiento'];
+
+    /**
      * Validation rules shared by store and update.
      *
      * The room and the reservation must belong to the current hotel.
@@ -55,9 +62,15 @@ class CalendarController extends Controller
             $query->where('active', $request->boolean('status'));
         }
 
+        $type = $request->string('type')->toString();
+
+        if (in_array($type, self::TYPES, true)) {
+            $query->where('type', $type);
+        }
+
         return Inertia::render('Calendar/Index', [
-            'events' => $query->orderBy('starts_at')->get(),
-            'filters' => $request->only(['search', 'status']),
+            'events' => $query->orderBy('starts_at')->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search', 'status', 'type']),
         ]);
     }
 

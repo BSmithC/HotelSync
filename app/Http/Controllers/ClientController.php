@@ -65,10 +65,8 @@ class ClientController extends Controller
             $query->where('active', $request->boolean('status'));
         }
 
-        $clients = $query->latest('id')->get();
-
         return Inertia::render('Clients/Index', [
-            'clients' => $clients,
+            'clients' => $query->latest('id')->paginate(10)->withQueryString(),
             'filters' => $request->only(['search', 'status']),
         ]);
     }

@@ -1,31 +1,25 @@
-import { Head, Link, router } from '@inertiajs/react';
-import {
-    Building,
-    Eye,
-    MoreHorizontal,
-    Pencil,
-    Plus,
-    RefreshCw,
-    Trash2,
-} from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { Building, Eye, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { DataTable } from '@/components/data-table';
+import type { DataTableColumn } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
+import { ListFilters } from '@/components/list-filters';
+import { PageHeader } from '@/components/page-header';
+import { Pagination } from '@/components/pagination';
+import { RowActions } from '@/components/row-actions';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import { useRecordAction } from '@/hooks/use-record-action';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    create as createBuilding,
+    destroy as destroyBuilding,
+    edit as editBuilding,
+    index as buildingsIndex,
+    restore as restoreBuilding,
+    show as showBuilding,
+} from '@/routes/buildings';
+import type { ListFiltersState, Paginated } from '@/types';
 
 interface BuildingRow {
     id: number;
@@ -36,182 +30,204 @@ interface BuildingRow {
     branch?: { id: number; name: string } | null;
 }
 
-export default function Index({ buildings }: { buildings: BuildingRow[] }) {
-    const handleDelete = (id: number) => {
-        if (confirm('¿Deseas desactivar este edificio?')) {
-            router.delete(`/buildings/${id}`);
-        }
-    };
+const statusOptions = [
+    { value: '1', label: 'Activos' },
+    { value: '0', label: 'Inactivos' },
+];
 
-    const handleRestore = (id: number) => {
-        if (confirm('¿Deseas restaurar este edificio?')) {
-            router.patch(`/buildings/${id}/restore`);
-        }
-    };
+export default function Index({
+    buildings,
+    filters,
+}: {
+    buildings: Paginated<BuildingRow>;
+    filters: ListFiltersState;
+}) {
+    const recordAction = useRecordAction({
+        destroy: destroyBuilding,
+        restore: restoreBuilding,
+    });
+
+    const hasFilters = Boolean(filters.search || filters.status);
+
+    const columns: DataTableColumn<BuildingRow>[] = [
+        {
+            id: 'name',
+            header: 'Edificio',
+            cell: (building) => (
+                <Link
+                    href={showBuilding(building.id)}
+                    className="font-medium text-foreground transition-colors hover:text-primary"
+                >
+                    {building.name}
+                </Link>
+            ),
+        },
+        {
+            id: 'branch',
+            header: 'Sucursal',
+            cell: (building) => building.branch?.name ?? '—',
+        },
+        {
+            id: 'floors',
+            header: 'Pisos',
+            align: 'center',
+            cell: (building) => building.floors,
+        },
+        {
+            id: 'address',
+            header: 'Dirección',
+            cell: (building) => (
+                <span
+                    className="block max-w-56 truncate text-muted-foreground"
+                    title={building.address ?? ''}
+                >
+                    {building.address || '—'}
+                </span>
+            ),
+        },
+        {
+            id: 'status',
+            header: 'Estado',
+            align: 'center',
+            cell: (building) => (
+                <StatusBadge status={building.active ? 'Activo' : 'Inactivo'} />
+            ),
+        },
+        {
+            id: 'actions',
+            header: 'Acciones',
+            align: 'right',
+            cell: (building) => (
+                <RowActions
+                    actions={[
+                        {
+                            label: 'Editar',
+                            icon: Pencil,
+                            href: editBuilding(building.id),
+                        },
+                        {
+                            label: 'Ver detalle',
+                            icon: Eye,
+                            href: showBuilding(building.id),
+                        },
+                        building.active
+                            ? {
+                                  label: 'Desactivar',
+                                  icon: Trash2,
+                                  destructive: true,
+                                  onSelect: () =>
+                                      recordAction.request({
+                                          id: building.id,
+                                          action: 'delete',
+                                          name: building.name,
+                                      }),
+                              }
+                            : {
+                                  label: 'Restaurar',
+                                  icon: RefreshCw,
+                                  success: true,
+                                  onSelect: () =>
+                                      recordAction.request({
+                                          id: building.id,
+                                          action: 'restore',
+                                          name: building.name,
+                                      }),
+                              },
+                    ]}
+                />
+            ),
+        },
+    ];
+
+    const pending = recordAction.pending;
+    const isDelete = pending?.action === 'delete';
 
     return (
         <>
             <Head title="Edificios" />
 
-            <div className="space-y-6 p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold tracking-tight text-foreground">
-                            Edificios
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            Administra los edificios de cada sucursal del hotel.
-                        </p>
-                    </div>
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+                <PageHeader
+                    title="Edificios"
+                    description="Administra los edificios de cada sucursal del hotel."
+                    actions={
+                        <Button asChild>
+                            <Link href={createBuilding()}>
+                                <Plus className="size-4" />
+                                Nuevo edificio
+                            </Link>
+                        </Button>
+                    }
+                />
 
-                    <Button asChild className="w-full sm:w-auto">
-                        <Link href="/buildings/create">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nuevo Edificio
-                        </Link>
-                    </Button>
-                </div>
+                <ListFilters
+                    url={buildingsIndex.url()}
+                    search={filters.search}
+                    searchPlaceholder="Buscar por nombre, dirección o descripción"
+                    selects={[
+                        {
+                            key: 'status',
+                            label: 'Estado',
+                            options: statusOptions,
+                            value: filters.status,
+                        },
+                    ]}
+                />
 
-                <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                    {buildings.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead className="w-[60px] text-center">
-                                        #
-                                    </TableHead>
-                                    <TableHead>Nombre</TableHead>
-                                    <TableHead>Sucursal</TableHead>
-                                    <TableHead className="text-center">
-                                        Pisos
-                                    </TableHead>
-                                    <TableHead>Dirección</TableHead>
-                                    <TableHead className="text-center">
-                                        Estado
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                        Acciones
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {buildings.map((building) => (
-                                    <TableRow
-                                        key={building.id}
-                                        className="hover:bg-muted/30"
-                                    >
-                                        <TableCell className="text-center font-medium text-muted-foreground">
-                                            {building.id}
-                                        </TableCell>
-                                        <TableCell className="font-semibold text-foreground">
-                                            {building.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {building.branch?.name ?? '—'}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            {building.floors}
-                                        </TableCell>
-                                        <TableCell
-                                            className="max-w-[220px] truncate"
-                                            title={building.address ?? ''}
-                                        >
-                                            {building.address || '—'}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <StatusBadge
-                                                status="Activo"
-                                                active={building.active}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <span className="sr-only">
-                                                            Abrir menú
-                                                        </span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>
-                                                        Opciones
-                                                    </DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        asChild
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Link
-                                                            href={`/buildings/${building.id}/edit`}
-                                                        >
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Editar
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        asChild
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Link
-                                                            href={`/buildings/${building.id}`}
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Ver detalle
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    {building.active ? (
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    building.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-red-600 focus:text-red-600"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Desactivar
-                                                        </DropdownMenuItem>
-                                                    ) : (
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleRestore(
-                                                                    building.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-emerald-600 focus:text-emerald-600"
-                                                        >
-                                                            <RefreshCw className="mr-2 h-4 w-4" />
-                                                            Restaurar
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                <Building className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground">
-                                No hay edificios registrados
-                            </h3>
-                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                                Registra el primer edificio y vincúlalo a una de
-                                tus sucursales.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                <DataTable
+                    caption="Edificios registrados"
+                    columns={columns}
+                    rows={buildings.data}
+                    rowKey={(building) => building.id}
+                    empty={
+                        <EmptyState
+                            icon={Building}
+                            title={
+                                hasFilters
+                                    ? 'Sin resultados'
+                                    : 'No hay edificios registrados'
+                            }
+                            description={
+                                hasFilters
+                                    ? 'Ajusta la búsqueda o el estado para encontrar el edificio.'
+                                    : 'Registra el primer edificio y vincúlalo a una de tus sucursales.'
+                            }
+                            action={
+                                !hasFilters && (
+                                    <Button asChild>
+                                        <Link href={createBuilding()}>
+                                            <Plus className="size-4" />
+                                            Nuevo edificio
+                                        </Link>
+                                    </Button>
+                                )
+                            }
+                        />
+                    }
+                    footer={<Pagination meta={buildings} />}
+                />
             </div>
+
+            <ConfirmDialog
+                open={pending !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        recordAction.close();
+                    }
+                }}
+                title={isDelete ? 'Desactivar edificio' : 'Restaurar edificio'}
+                description={
+                    pending
+                        ? isDelete
+                            ? `El edificio "${pending.name}" quedará inactivo hasta que lo restaures.`
+                            : `El edificio "${pending.name}" volverá a estar activo.`
+                        : undefined
+                }
+                confirmLabel={isDelete ? 'Desactivar' : 'Restaurar'}
+                destructive={isDelete}
+                processing={recordAction.processing}
+                onConfirm={recordAction.confirm}
+            />
         </>
     );
 }

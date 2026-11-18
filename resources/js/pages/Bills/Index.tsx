@@ -1,32 +1,27 @@
-import { Head, Link, router } from '@inertiajs/react';
-import {
-    Eye,
-    MoreHorizontal,
-    Pencil,
-    Plus,
-    Receipt,
-    RefreshCw,
-    Trash2,
-} from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { Eye, Pencil, Plus, Receipt, RefreshCw, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { DataTable } from '@/components/data-table';
+import type { DataTableColumn } from '@/components/data-table';
+import { EmptyState } from '@/components/empty-state';
+import { ListFilters } from '@/components/list-filters';
+import { PageHeader } from '@/components/page-header';
+import { Pagination } from '@/components/pagination';
+import { RowActions } from '@/components/row-actions';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { useRecordAction } from '@/hooks/use-record-action';
 import { formatCurrency, formatDate } from '@/lib/format';
+import {
+    create as createBill,
+    destroy as destroyBill,
+    edit as editBill,
+    index as billsIndex,
+    restore as restoreBill,
+    show as showBill,
+} from '@/routes/bills';
+import { show as showReservation } from '@/routes/reservations';
+import type { ListFiltersState, Paginated } from '@/types';
 
 interface Bill {
     id: number;
@@ -39,188 +34,242 @@ interface Bill {
     reservation?: { id: number } | null;
 }
 
-export default function Index({ bills }: { bills: Bill[] }) {
-    const handleDelete = (id: number) => {
-        if (confirm('¿Deseas anular esta factura?')) {
-            router.delete(`/bills/${id}`);
-        }
-    };
+const stateOptions = [
+    { value: 'Pendiente', label: 'Pendiente' },
+    { value: 'Pagada', label: 'Pagada' },
+    { value: 'Anulada', label: 'Anulada' },
+];
 
-    const handleRestore = (id: number) => {
-        if (confirm('¿Deseas restaurar esta factura?')) {
-            router.patch(`/bills/${id}/restore`);
-        }
-    };
+const statusOptions = [
+    { value: '1', label: 'Activas' },
+    { value: '0', label: 'Inactivas' },
+];
+
+function clientName(bill: Bill): string {
+    if (!bill.client) {
+        return '—';
+    }
+
+    return `${bill.client.first_name} ${bill.client.last_name}`;
+}
+
+export default function Index({
+    bills,
+    filters,
+}: {
+    bills: Paginated<Bill>;
+    filters: ListFiltersState;
+}) {
+    const recordAction = useRecordAction({
+        destroy: destroyBill,
+        restore: restoreBill,
+    });
+
+    const hasFilters = Boolean(
+        filters.search || filters.state || filters.status,
+    );
+
+    const columns: DataTableColumn<Bill>[] = [
+        {
+            id: 'number',
+            header: 'Factura',
+            cell: (bill) => (
+                <Link
+                    href={showBill(bill.id)}
+                    className="font-mono font-semibold text-foreground transition-colors hover:text-primary"
+                >
+                    {bill.number || `#${bill.id}`}
+                </Link>
+            ),
+        },
+        {
+            id: 'client',
+            header: 'Huésped',
+            cell: (bill) => clientName(bill),
+        },
+        {
+            id: 'reservation',
+            header: 'Reserva',
+            cell: (bill) =>
+                bill.reservation ? (
+                    <Link
+                        href={showReservation(bill.reservation.id)}
+                        className="text-primary hover:underline"
+                    >
+                        #{bill.reservation.id}
+                    </Link>
+                ) : (
+                    <span className="text-muted-foreground">—</span>
+                ),
+        },
+        {
+            id: 'issuedAt',
+            header: 'Emisión',
+            cell: (bill) => (
+                <span className="text-sm text-muted-foreground">
+                    {formatDate(bill.issued_at)}
+                </span>
+            ),
+        },
+        {
+            id: 'total',
+            header: 'Total',
+            align: 'right',
+            cell: (bill) => (
+                <span className="font-semibold text-foreground">
+                    {formatCurrency(bill.total)}
+                </span>
+            ),
+        },
+        {
+            id: 'status',
+            header: 'Estado',
+            align: 'center',
+            cell: (bill) => (
+                <StatusBadge status={bill.status} active={bill.active} />
+            ),
+        },
+        {
+            id: 'actions',
+            header: 'Acciones',
+            align: 'right',
+            cell: (bill) => (
+                <RowActions
+                    actions={[
+                        {
+                            label: 'Editar',
+                            icon: Pencil,
+                            href: editBill(bill.id),
+                        },
+                        {
+                            label: 'Ver detalle',
+                            icon: Eye,
+                            href: showBill(bill.id),
+                        },
+                        bill.active
+                            ? {
+                                  label: 'Anular',
+                                  icon: Trash2,
+                                  destructive: true,
+                                  onSelect: () =>
+                                      recordAction.request({
+                                          id: bill.id,
+                                          action: 'delete',
+                                          name: bill.number || `#${bill.id}`,
+                                      }),
+                              }
+                            : {
+                                  label: 'Restaurar',
+                                  icon: RefreshCw,
+                                  success: true,
+                                  onSelect: () =>
+                                      recordAction.request({
+                                          id: bill.id,
+                                          action: 'restore',
+                                          name: bill.number || `#${bill.id}`,
+                                      }),
+                              },
+                    ]}
+                />
+            ),
+        },
+    ];
+
+    const pending = recordAction.pending;
+    const isDelete = pending?.action === 'delete';
 
     return (
         <>
             <Head title="Facturas" />
 
-            <div className="space-y-6 p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold tracking-tight text-foreground">
-                            Facturas
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            Consulta las facturas emitidas y su estado de pago.
-                        </p>
-                    </div>
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+                <PageHeader
+                    title="Facturas"
+                    description="Consulta las facturas emitidas y su estado de pago."
+                    actions={
+                        <Button asChild>
+                            <Link href={createBill()}>
+                                <Plus className="size-4" />
+                                Nueva factura
+                            </Link>
+                        </Button>
+                    }
+                />
 
-                    <Button asChild className="w-full sm:w-auto">
-                        <Link href="/bills/create">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nueva Factura
-                        </Link>
-                    </Button>
-                </div>
+                <ListFilters
+                    url={billsIndex.url()}
+                    search={filters.search}
+                    searchPlaceholder="Buscar por número, huésped o estado"
+                    selects={[
+                        {
+                            key: 'state',
+                            label: 'Estado de pago',
+                            options: stateOptions,
+                            value: filters.state,
+                        },
+                        {
+                            key: 'status',
+                            label: 'Registro',
+                            options: statusOptions,
+                            value: filters.status,
+                        },
+                    ]}
+                />
 
-                <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                    {bills.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead>Número</TableHead>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Reserva</TableHead>
-                                    <TableHead>Emitida</TableHead>
-                                    <TableHead className="text-right">
-                                        Total
-                                    </TableHead>
-                                    <TableHead className="text-center">
-                                        Estado
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                        Acciones
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {bills.map((bill) => (
-                                    <TableRow
-                                        key={bill.id}
-                                        className="hover:bg-muted/30"
-                                    >
-                                        <TableCell className="font-mono font-semibold text-foreground">
-                                            {bill.number}
-                                        </TableCell>
-                                        <TableCell>
-                                            {bill.client
-                                                ? `${bill.client.first_name} ${bill.client.last_name}`
-                                                : '—'}
-                                        </TableCell>
-                                        <TableCell>
-                                            {bill.reservation ? (
-                                                <Link
-                                                    href={`/reservations/${bill.reservation.id}`}
-                                                    className="text-primary hover:underline"
-                                                >
-                                                    #{bill.reservation.id}
-                                                </Link>
-                                            ) : (
-                                                '—'
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-sm">
-                                            {formatDate(bill.issued_at)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-semibold">
-                                            {formatCurrency(bill.total)}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <StatusBadge
-                                                status={bill.status}
-                                                active={bill.active}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <span className="sr-only">
-                                                            Abrir menú
-                                                        </span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>
-                                                        Opciones
-                                                    </DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        asChild
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Link
-                                                            href={`/bills/${bill.id}/edit`}
-                                                        >
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Editar
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        asChild
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Link
-                                                            href={`/bills/${bill.id}`}
-                                                        >
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Ver detalle
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    {bill.active ? (
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    bill.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-red-600 focus:text-red-600"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Anular
-                                                        </DropdownMenuItem>
-                                                    ) : (
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleRestore(
-                                                                    bill.id,
-                                                                )
-                                                            }
-                                                            className="cursor-pointer text-emerald-600 focus:text-emerald-600"
-                                                        >
-                                                            <RefreshCw className="mr-2 h-4 w-4" />
-                                                            Restaurar
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                <Receipt className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground">
-                                No hay facturas registradas
-                            </h3>
-                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                                Emite una factura desde una reserva o crea una
-                                nueva desde el botón de arriba.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                <DataTable
+                    caption="Facturas emitidas"
+                    columns={columns}
+                    rows={bills.data}
+                    rowKey={(bill) => bill.id}
+                    empty={
+                        <EmptyState
+                            icon={Receipt}
+                            title={
+                                hasFilters
+                                    ? 'Sin resultados'
+                                    : 'No hay facturas registradas'
+                            }
+                            description={
+                                hasFilters
+                                    ? 'Ajusta la búsqueda o los filtros de estado para encontrar la factura.'
+                                    : 'Emite una factura desde una reserva o crea una nueva para registrar ingresos.'
+                            }
+                            action={
+                                !hasFilters && (
+                                    <Button asChild>
+                                        <Link href={createBill()}>
+                                            <Plus className="size-4" />
+                                            Nueva factura
+                                        </Link>
+                                    </Button>
+                                )
+                            }
+                        />
+                    }
+                    footer={<Pagination meta={bills} />}
+                />
             </div>
+
+            <ConfirmDialog
+                open={pending !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        recordAction.close();
+                    }
+                }}
+                title={isDelete ? 'Anular factura' : 'Restaurar factura'}
+                description={
+                    pending
+                        ? isDelete
+                            ? `La factura "${pending.name}" quedará anulada y no contará como ingreso.`
+                            : `La factura "${pending.name}" volverá a estar activa.`
+                        : undefined
+                }
+                confirmLabel={isDelete ? 'Anular factura' : 'Restaurar'}
+                destructive={isDelete}
+                processing={recordAction.processing}
+                onConfirm={recordAction.confirm}
+            />
         </>
     );
 }

@@ -15,6 +15,13 @@ use Inertia\Response;
 class ReservationController extends Controller
 {
     /**
+     * Reservation statuses accepted by the list filter.
+     *
+     * @var list<string>
+     */
+    private const STATUSES = ['Pendiente', 'Confirmada', 'En curso', 'Finalizada', 'Cancelada'];
+
+    /**
      * Validation rules shared by store and update.
      *
      * The client and the room must belong to the current hotel.
@@ -58,9 +65,15 @@ class ReservationController extends Controller
             $query->where('active', $request->boolean('status'));
         }
 
+        $state = $request->string('state')->toString();
+
+        if (in_array($state, self::STATUSES, true)) {
+            $query->where('status', $state);
+        }
+
         return Inertia::render('Reservations/Index', [
-            'reservations' => $query->latest('id')->get(),
-            'filters' => $request->only(['search', 'status']),
+            'reservations' => $query->latest('id')->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search', 'status', 'state']),
         ]);
     }
 

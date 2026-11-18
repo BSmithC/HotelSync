@@ -53,7 +53,7 @@ class BuildingController extends Controller
         }
 
         return Inertia::render('Buildings/Index', [
-            'buildings' => $query->latest('id')->get(),
+            'buildings' => $query->latest('id')->paginate(10)->withQueryString(),
             'filters' => $request->only(['search', 'status']),
         ]);
     }

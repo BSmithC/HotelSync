@@ -52,7 +52,7 @@ it('allows authenticated users to list clients', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Clients/Index')
-            ->has('clients', 1));
+            ->has('clients.data', 1));
 });
 
 it('creates, deactivates and restores a client', function () {

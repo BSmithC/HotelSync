@@ -62,7 +62,7 @@ it('creates a reservation linked to a client and a room', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Reservations/Index')
-            ->has('reservations', 1));
+            ->has('reservations.data', 1));
 });
 
 it('deactivates and restores a reservation', function () {
@@ -112,7 +112,7 @@ it('creates a bill with the total calculated from subtotal and tax', function ()
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Bills/Index')
-            ->has('bills', 1));
+            ->has('bills.data', 1));
 });
 
 it('creates a building linked to a branch', function () {
@@ -169,7 +169,7 @@ it('creates a calendar event linked to a room and a reservation', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('Calendar/Index')
-            ->has('events', 1));
+            ->has('events.data', 1));
 });
 
 it('keeps reservations, bills, buildings and events isolated between hotels', function () {
@@ -242,19 +242,19 @@ it('keeps reservations, bills, buildings and events isolated between hotels', fu
 
     $this->actingAs($this->user)
         ->get('/reservations')
-        ->assertInertia(fn ($page) => $page->has('reservations', 0));
+        ->assertInertia(fn ($page) => $page->has('reservations.data', 0));
 
     $this->actingAs($this->user)
         ->get('/bills')
-        ->assertInertia(fn ($page) => $page->has('bills', 0));
+        ->assertInertia(fn ($page) => $page->has('bills.data', 0));
 
     $this->actingAs($this->user)
         ->get('/buildings')
-        ->assertInertia(fn ($page) => $page->has('buildings', 0));
+        ->assertInertia(fn ($page) => $page->has('buildings.data', 0));
 
     $this->actingAs($this->user)
         ->get('/calendars')
-        ->assertInertia(fn ($page) => $page->has('events', 0));
+        ->assertInertia(fn ($page) => $page->has('events.data', 0));
 });
 
 it('rejects a client from another hotel when creating a reservation', function () {
