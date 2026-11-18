@@ -15,16 +15,28 @@ export function parseDate(value: string): Date {
     return new Date(value);
 }
 
+/**
+ * `Intl` uses non-breaking spaces in some locales and ICU versions (for
+ * example before "p. m."). The server renderer and the browser can disagree
+ * on which character they emit, which breaks hydration, so both are
+ * normalized to a regular space.
+ */
+function normalizeSpaces(value: string): string {
+    return value.replace(/[\u00a0\u202f]/g, ' ');
+}
+
 export function formatDate(value?: string | null): string {
     if (!value) {
         return '—';
     }
 
-    return parseDate(value).toLocaleDateString('es-DO', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
+    return normalizeSpaces(
+        parseDate(value).toLocaleDateString('es-DO', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        }),
+    );
 }
 
 export function formatDateShort(value?: string | null): string {
@@ -32,10 +44,12 @@ export function formatDateShort(value?: string | null): string {
         return '—';
     }
 
-    return parseDate(value).toLocaleDateString('es-DO', {
-        day: '2-digit',
-        month: 'short',
-    });
+    return normalizeSpaces(
+        parseDate(value).toLocaleDateString('es-DO', {
+            day: '2-digit',
+            month: 'short',
+        }),
+    );
 }
 
 export function formatDateTime(value?: string | null): string {
@@ -43,40 +57,48 @@ export function formatDateTime(value?: string | null): string {
         return '—';
     }
 
-    return parseDate(value).toLocaleString('es-DO', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    return normalizeSpaces(
+        parseDate(value).toLocaleString('es-DO', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }),
+    );
 }
 
 export function formatCurrency(
     value?: string | number | null,
     currency = 'DOP',
 ): string {
-    return new Intl.NumberFormat('es-DO', {
-        style: 'currency',
-        currency,
-        minimumFractionDigits: 2,
-    }).format(Number(value ?? 0));
+    return normalizeSpaces(
+        new Intl.NumberFormat('es-DO', {
+            style: 'currency',
+            currency,
+            minimumFractionDigits: 2,
+        }).format(Number(value ?? 0)),
+    );
 }
 
 export function formatCompactCurrency(
     value?: string | number | null,
     currency = 'DOP',
 ): string {
-    return new Intl.NumberFormat('es-DO', {
-        style: 'currency',
-        currency,
-        notation: 'compact',
-        maximumFractionDigits: 1,
-    }).format(Number(value ?? 0));
+    return normalizeSpaces(
+        new Intl.NumberFormat('es-DO', {
+            style: 'currency',
+            currency,
+            notation: 'compact',
+            maximumFractionDigits: 1,
+        }).format(Number(value ?? 0)),
+    );
 }
 
 export function formatNumber(value?: string | number | null): string {
-    return new Intl.NumberFormat('es-DO').format(Number(value ?? 0));
+    return normalizeSpaces(
+        new Intl.NumberFormat('es-DO').format(Number(value ?? 0)),
+    );
 }
 
 export function toDateInput(value?: string | null): string {
