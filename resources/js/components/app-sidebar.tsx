@@ -90,6 +90,17 @@ const navGroups: NavGroup[] = [
         ],
     },
     {
+        label: 'Personas',
+        items: [
+            {
+                title: 'Empleados',
+                href: '/employees',
+                icon: UserCog,
+                permission: 'employees.view',
+            },
+        ],
+    },
+    {
         label: 'Finanzas',
         items: [
             {
@@ -123,13 +134,6 @@ const navGroups: NavGroup[] = [
     {
         label: 'Próximamente',
         items: [
-            {
-                title: 'Empleados',
-                href: '/settings/profile',
-                icon: UserCog,
-                disabled: true,
-                badge: comingSoon,
-            },
             {
                 title: 'Reportes',
                 href: dashboard(),

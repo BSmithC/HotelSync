@@ -8,6 +8,7 @@ use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HotelSwitchController;
 use App\Http\Controllers\InventoryController;
@@ -77,6 +78,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('requests/{serviceRequest}/status', [ServicesController::class, 'changeRequestStatus'])->name('requests.status');
         Route::post('requests/{serviceRequest}/void', [ServicesController::class, 'voidRequest'])->name('requests.void');
         Route::post('requests/{serviceRequest}/bill', [ServicesController::class, 'billRequest'])->name('requests.bill');
+    });
+
+    // Directorio de empleados con datos sensibles protegidos y accesos.
+    Route::prefix('employees')->name('employees.')->group(function () {
+        Route::get('/', [EmployeesController::class, 'index'])->name('index');
+        Route::post('/', [EmployeesController::class, 'store'])->name('store');
+        Route::patch('{employee}', [EmployeesController::class, 'update'])->name('update');
+        Route::post('{employee}/access', [EmployeesController::class, 'linkAccess'])->name('access');
+        Route::delete('{employee}/access', [EmployeesController::class, 'revokeAccess'])->name('access.revoke');
     });
 
     Route::resources([
