@@ -10,6 +10,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HotelSwitchController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoomController;
@@ -55,6 +56,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('expenses', [FinanceController::class, 'storeExpense'])->name('expenses.store');
         Route::post('expenses/{expense}/void', [FinanceController::class, 'voidExpense'])->name('expenses.void');
         Route::post('bills/{bill}/void', [FinanceController::class, 'voidBill'])->name('bills.void');
+    });
+
+    // Centro de inventario: catálogo, movimientos y ajustes con reversos.
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::post('items', [InventoryController::class, 'storeItem'])->name('items.store');
+        Route::patch('items/{item}', [InventoryController::class, 'updateItem'])->name('items.update');
+        Route::post('items/{item}/movements', [InventoryController::class, 'storeMovement'])->name('movements.store');
+        Route::post('movements/{movement}/void', [InventoryController::class, 'voidMovement'])->name('movements.void');
     });
 
     Route::resources([

@@ -75,6 +75,12 @@ const navGroups: NavGroup[] = [
                 href: '/rooms',
                 icon: BedDouble,
             },
+            {
+                title: 'Inventario',
+                href: '/inventory',
+                icon: Package,
+                permission: 'inventory.view',
+            },
         ],
     },
     {
@@ -111,13 +117,6 @@ const navGroups: NavGroup[] = [
     {
         label: 'Próximamente',
         items: [
-            {
-                title: 'Inventario',
-                href: '/rooms',
-                icon: Package,
-                disabled: true,
-                badge: comingSoon,
-            },
             {
                 title: 'Servicios',
                 href: '/rooms',
