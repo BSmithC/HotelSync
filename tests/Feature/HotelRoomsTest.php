@@ -5,6 +5,8 @@ use App\Models\Room;
 use App\Models\User;
 
 beforeEach(function () {
+    useCurrentHotel();
+
     $this->user = User::factory()->create();
     $this->area = Area::create([
         'name' => 'Planta baja',

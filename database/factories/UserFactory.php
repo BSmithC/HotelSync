@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Hotel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,20 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Every user needs a hotel (tenant) to work with.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $hotel = Hotel::query()->orderBy('id')->first() ?? Hotel::factory()->create();
+
+            $user->hotels()->syncWithoutDetaching([
+                $hotel->id => ['role' => 'owner'],
+            ]);
+        });
     }
 
     /**

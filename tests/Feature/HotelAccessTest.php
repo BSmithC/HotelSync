@@ -4,6 +4,10 @@ use App\Models\Branch;
 use App\Models\Client;
 use App\Models\User;
 
+beforeEach(function () {
+    useCurrentHotel();
+});
+
 it('redirects guests away from every business module', function (string $uri) {
     $this->get($uri)->assertRedirect(route('login'));
 })->with([

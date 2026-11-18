@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Building2, HousePlug, LayoutGrid, User } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import { HotelSwitcher } from '@/components/hotel-switcher';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -54,6 +55,7 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+                <HotelSwitcher />
             </SidebarHeader>
 
             <SidebarContent>

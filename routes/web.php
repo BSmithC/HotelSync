@@ -7,6 +7,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\HotelSwitchController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,9 @@ Route::inertia('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
+
+    // Cambio de hotel activo para usuarios con acceso a varios hoteles.
+    Route::post('hotels/{hotel}/switch', HotelSwitchController::class)->name('hotels.switch');
 
     // Acciones explícitas de restauración (no dependen de enviar "active" en un update).
     Route::patch('clients/{client}/restore', [ClientController::class, 'restore'])->name('clients.restore');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\CurrentHotel;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,12 +36,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $currentHotel = app(CurrentHotel::class)->model();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
+            'currentHotel' => $currentHotel?->only(['id', 'name', 'slug']),
+            'hotels' => $user === null
+                ? []
+                : $user->hotels()
+                    ->orderBy('hotels.name')
+                    ->get(['hotels.id', 'hotels.name', 'hotels.slug']),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

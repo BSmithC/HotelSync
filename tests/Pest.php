@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Hotel;
+use App\Support\CurrentHotel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +49,18 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Activates the default hotel created by the migrations for the current test.
+ *
+ * Needed when tests create tenant models directly (outside an HTTP request).
+ */
+function useCurrentHotel(): Hotel
+{
+    $hotel = Hotel::query()->orderBy('id')->firstOrFail();
+
+    app(CurrentHotel::class)->set($hotel->id);
+
+    return $hotel;
 }

@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
+        'hotel_id',
         'first_name',
         'last_name',
         'cedula',

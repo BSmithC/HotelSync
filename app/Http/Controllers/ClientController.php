@@ -3,13 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ClientController extends Controller
 {
+    /**
+     * Validation rules shared by store and update.
+     *
+     * Cédula and RNC are unique per hotel, not globally.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(?Client $client = null): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'first_name' => ['required', 'string'],
+            'last_name' => ['required', 'string'],
+            'cedula' => [
+                'nullable',
+                'required_without:rnc',
+                'regex:/^[0-9]{11}$/',
+                Rule::unique('clients', 'cedula')->where('hotel_id', $hotelId)->ignore($client?->id),
+            ],
+            'rnc' => [
+                'nullable',
+                'required_without:cedula',
+                'regex:/^([0-9]{9}|[0-9]{11})$/',
+                Rule::unique('clients', 'rnc')->where('hotel_id', $hotelId)->ignore($client?->id),
+            ],
+            'address' => ['required', 'string'],
+            'phone_number' => ['required', 'string'],
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -61,14 +94,7 @@ class ClientController extends Controller
             'rnc' => $rnc ?: null,
         ]);
 
-        $validated = $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'cedula' => 'nullable|required_without:rnc|unique:clients,cedula|regex:/^[0-9]{11}$/',
-            'rnc' => 'nullable|required_without:cedula|unique:clients,rnc|regex:/^([0-9]{9}|[0-9]{11})$/',
-            'address' => 'required|string',
-            'phone_number' => 'required|string',
-        ]);
+        $validated = $request->validate($this->rules());
 
         Client::create($validated);
 
@@ -119,14 +145,7 @@ class ClientController extends Controller
             'rnc' => $rnc ?: null,
         ]);
 
-        $validated = $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'cedula' => 'nullable|required_without:rnc|regex:/^[0-9]{11}$/|unique:clients,cedula,'.$client->id,
-            'rnc' => 'nullable|required_without:cedula|regex:/^([0-9]{9}|[0-9]{11})$/|unique:clients,rnc,'.$client->id,
-            'address' => 'required|string',
-            'phone_number' => 'required|string',
-        ]);
+        $validated = $request->validate($this->rules($client));
 
         $client->update($validated);
 

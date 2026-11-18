@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\CurrentHotel;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // One tenant context per request (scoped bindings reset between requests).
+        $this->app->scoped(CurrentHotel::class);
     }
 
     /**

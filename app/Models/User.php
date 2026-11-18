@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -30,6 +31,24 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Hotels (tenants) this user has access to.
+     */
+    public function hotels(): BelongsToMany
+    {
+        return $this->belongsToMany(Hotel::class)
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * Role of this user inside the given hotel (null when not a member).
+     */
+    public function roleIn(Hotel $hotel): ?string
+    {
+        return $this->hotels()->whereKey($hotel->id)->first()?->pivot?->role;
+    }
 
     /**
      * Get the attributes that should be cast.

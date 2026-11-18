@@ -3,13 +3,56 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bed;
+use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BedController extends Controller
 {
+    /**
+     * Validation rules for creating a bed.
+     *
+     * The area must belong to the current hotel.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'name' => ['required', 'string', 'max:50'],
+            'area_id' => ['required', Rule::exists('areas', 'id')->where('hotel_id', $hotelId)],
+            'capacity' => ['required', 'integer', 'min:1'],
+            'shape' => ['nullable', 'string', 'max:30'],
+        ];
+    }
+
+    /**
+     * Validation rules for updating a bed (all fields are optional).
+     *
+     * @return array<string, mixed>
+     */
+    private function updateRules(): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'name' => ['sometimes', 'string', 'max:50'],
+            'area_id' => ['sometimes', Rule::exists('areas', 'id')->where('hotel_id', $hotelId)],
+            'capacity' => ['sometimes', 'integer', 'min:1'],
+            'shape' => ['nullable', 'string', 'max:30'],
+            'pos_x' => ['nullable', 'integer'],
+            'pos_y' => ['nullable', 'integer'],
+            'width' => ['nullable', 'integer'],
+            'height' => ['nullable', 'integer'],
+            'rotation' => ['nullable', 'integer'],
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -34,12 +77,7 @@ class BedController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:50',
-            'area_id' => 'required|exists:areas,id',
-            'capacity' => 'required|integer|min:1',
-            'shape' => 'nullable|string|max:30',
-        ]);
+        $validated = $request->validate($this->rules());
 
         Bed::create([
             ...$validated,
@@ -79,19 +117,7 @@ class BedController extends Controller
     {
         $bed = Bed::findOrFail($id);
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:50',
-            'area_id' => 'sometimes|exists:areas,id',
-            'capacity' => 'sometimes|integer|min:1',
-            'shape' => 'nullable|string|max:30',
-            'pos_x' => 'nullable|integer',
-            'pos_y' => 'nullable|integer',
-            'width' => 'nullable|integer',
-            'height' => 'nullable|integer',
-            'rotation' => 'nullable|integer',
-        ]);
-
-        $bed->update($validated);
+        $bed->update($request->validate($this->updateRules()));
 
         return back();
     }

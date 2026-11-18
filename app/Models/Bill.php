@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Bill extends Model
 {
-    //
+    use BelongsToHotel;
+
+    protected $fillable = [
+        'hotel_id',
+    ];
 }

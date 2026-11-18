@@ -4,13 +4,57 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use App\Models\Room;
+use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RoomController extends Controller
 {
+    /**
+     * Validation rules shared by store and the settings update.
+     *
+     * The area must belong to the current hotel.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'name' => ['required', 'string', 'max:50'],
+            'capacity' => ['required', 'integer', 'min:1'],
+            'shape' => ['required', 'string', 'max:30'],
+            'area_id' => ['required', Rule::exists('areas', 'id')->where('hotel_id', $hotelId)],
+            'description' => ['nullable', 'string'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'max:30'],
+        ];
+    }
+
+    /**
+     * Validation rules used when a room is moved on the map.
+     *
+     * @return array<string, mixed>
+     */
+    private function positionRules(): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'pos_x' => ['nullable', 'integer'],
+            'pos_y' => ['nullable', 'integer'],
+            'width' => ['nullable', 'integer'],
+            'height' => ['nullable', 'integer'],
+            'rotation' => ['nullable', 'integer'],
+            'area_id' => ['nullable', Rule::exists('areas', 'id')->where('hotel_id', $hotelId)],
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -54,16 +98,7 @@ class RoomController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:50',
-            'capacity' => 'required|integer|min:1',
-            'shape' => 'required|string|max:30',
-            'area_id' => 'required|exists:areas,id',
-            'description' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
-            'phone' => 'nullable|string|max:50',
-            'status' => 'nullable|string|max:30',
-        ]);
+        $validated = $request->validate($this->rules());
 
         Room::create([
             ...$validated,
@@ -110,16 +145,7 @@ class RoomController extends Controller
     public function update(Request $request, Room $room): RedirectResponse
     {
         if ($request->boolean('settings')) {
-            $validated = $request->validate([
-                'name' => 'required|string|max:50',
-                'capacity' => 'required|integer|min:1',
-                'shape' => 'required|string|max:30',
-                'area_id' => 'required|exists:areas,id',
-                'description' => 'nullable|string',
-                'price' => 'nullable|numeric|min:0',
-                'phone' => 'nullable|string|max:50',
-                'status' => 'nullable|string|max:30',
-            ]);
+            $validated = $request->validate($this->rules());
 
             $room->update($validated);
 
@@ -128,16 +154,7 @@ class RoomController extends Controller
             return to_route('rooms.index');
         }
 
-        $validated = $request->validate([
-            'pos_x' => 'nullable|integer',
-            'pos_y' => 'nullable|integer',
-            'width' => 'nullable|integer',
-            'height' => 'nullable|integer',
-            'rotation' => 'nullable|integer',
-            'area_id' => 'nullable|exists:areas,id',
-        ]);
-
-        $room->update($validated);
+        $room->update($request->validate($this->positionRules()));
 
         return back();
     }
