@@ -10,6 +10,7 @@ use App\Models\RoomStatusLog;
 use App\Services\ReceptionService;
 use App\Support\CurrentHotel;
 use App\Support\Permission;
+use App\Support\RoomStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -145,6 +146,7 @@ class ReceptionController extends Controller
                 'disponible' => (int) ($roomCounts['disponible'] ?? 0),
                 'ocupada' => (int) ($roomCounts['ocupada'] ?? 0),
                 'reservada' => (int) ($roomCounts['reservada'] ?? 0),
+                'limpieza' => (int) ($roomCounts['limpieza'] ?? 0),
                 'mantenimiento' => (int) ($roomCounts['mantenimiento'] ?? 0),
             ],
             'arrivals' => $arrivals,
@@ -153,7 +155,7 @@ class ReceptionController extends Controller
             'rooms' => $rooms,
             'roomsForAssignment' => Room::query()
                 ->where('active', true)
-                ->where('status', '!=', 'mantenimiento')
+                ->whereNotIn('status', [RoomStatus::MANTENIMIENTO, RoomStatus::LIMPIEZA])
                 ->orderBy('name')
                 ->get(['id', 'name', 'status']),
             'roomsForIncidents' => Room::query()

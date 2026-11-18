@@ -3,8 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Area;
+use App\Models\Room;
+use App\Services\AuditLogger;
+use App\Support\AreaType;
+use App\Support\CurrentHotel;
+use App\Support\Permission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,6 +22,8 @@ class AreaController extends Controller
      */
     public function index(): Response
     {
+        $this->authorize(Permission::RoomsView->value);
+
         return Inertia::render('coming-soon', [
             'title' => 'Áreas',
             'description' => 'La administración de áreas se habilitará con el plano hotelero completo.',
@@ -34,19 +43,28 @@ class AreaController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'width' => 'required|integer|min:100',
-            'height' => 'required|integer|min:100',
-            'x' => 'nullable|integer|min:0',
-            'y' => 'nullable|integer|min:0',
-        ]);
+        $this->authorize(Permission::RoomsLayout->value);
 
-        Area::create([
+        $validated = $this->validateArea($request, creating: true);
+
+        $area = Area::create([
             ...$validated,
             'x' => $validated['x'] ?? 0,
             'y' => $validated['y'] ?? 0,
+            'active' => $validated['active'] ?? true,
         ]);
+
+        app(AuditLogger::class)->record(
+            module: 'rooms',
+            action: 'area_created',
+            subject: $area,
+            description: "Área {$area->name} creada",
+            changes: [
+                'type' => $area->type,
+                'width' => $area->width,
+                'height' => $area->height,
+            ],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'El área se registró correctamente.']);
 
@@ -74,15 +92,21 @@ class AreaController extends Controller
      */
     public function update(Request $request, Area $area): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'x' => 'sometimes|integer|min:0',
-            'y' => 'sometimes|integer|min:0',
-            'width' => 'sometimes|integer|min:100',
-            'height' => 'sometimes|integer|min:100',
-        ]);
+        $this->authorize(Permission::RoomsLayout->value);
+
+        $validated = $this->validateArea($request, creating: false);
 
         $area->update($validated);
+
+        app(AuditLogger::class)->record(
+            module: 'rooms',
+            action: 'area_updated',
+            subject: $area,
+            description: "Área {$area->name} actualizada",
+            changes: ['attributes' => array_keys($validated)],
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'El área se actualizó correctamente.']);
 
         return back();
     }
@@ -90,8 +114,47 @@ class AreaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id): RedirectResponse
+    public function destroy(Area $area): RedirectResponse
     {
+        $this->authorize(Permission::RoomsLayout->value);
+
+        if (Room::query()->where('area_id', $area->id)->exists()) {
+            throw ValidationException::withMessages([
+                'area' => 'No se puede eliminar un área que todavía tiene habitaciones.',
+            ]);
+        }
+
+        $area->delete();
+
+        app(AuditLogger::class)->record(
+            module: 'rooms',
+            action: 'area_deleted',
+            description: "Área {$area->name} eliminada",
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'El área se eliminó correctamente.']);
+
         return back();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateArea(Request $request, bool $creating): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return $request->validate([
+            'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
+            'width' => [$creating ? 'required' : 'sometimes', 'integer', 'min:100', 'max:5000'],
+            'height' => [$creating ? 'required' : 'sometimes', 'integer', 'min:100', 'max:5000'],
+            'x' => ['sometimes', 'integer', 'min:0', 'max:20000'],
+            'y' => ['sometimes', 'integer', 'min:0', 'max:20000'],
+            'type' => ['sometimes', 'string', Rule::in(AreaType::ALL)],
+            'color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'floor' => ['nullable', 'integer', 'min:0', 'max:200'],
+            'building_id' => ['nullable', 'integer', Rule::exists('buildings', 'id')->where('hotel_id', $hotelId)],
+            'active' => ['sometimes', 'boolean'],
+        ]);
     }
 }

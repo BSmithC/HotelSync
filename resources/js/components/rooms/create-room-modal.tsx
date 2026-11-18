@@ -37,18 +37,31 @@ const shapes = [
 ];
 
 export function CreateRoomModal({ isOpen, areas, onClose }: Props) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
-        capacity: 2,
-        shape: 'rectangle',
-        area_id: areas[0] ? String(areas[0].id) : '',
-    });
+    const { data, setData, post, processing, errors, reset, transform } =
+        useForm({
+            name: '',
+            capacity: 2,
+            shape: 'rectangle',
+            area_id: areas[0] ? String(areas[0].id) : '',
+            category: '',
+            bed_count: 1,
+            amenities: '',
+        });
 
     useEffect(() => {
         if (isOpen) {
             setData('area_id', areas[0] ? String(areas[0].id) : '');
         }
     }, [isOpen, areas, setData]);
+
+    transform((values) => ({
+        ...values,
+        category: values.category.trim() === '' ? null : values.category,
+        amenities: values.amenities
+            .split(',')
+            .map((amenity) => amenity.trim())
+            .filter((amenity) => amenity !== ''),
+    }));
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -149,6 +162,66 @@ export function CreateRoomModal({ isOpen, areas, onClose }: Props) {
                                 </p>
                             )}
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="room-category">Categoría</Label>
+                            <Input
+                                id="room-category"
+                                value={data.category}
+                                onChange={(event) =>
+                                    setData('category', event.target.value)
+                                }
+                                placeholder="Ej. Estándar, Suite"
+                            />
+                            {errors.category && (
+                                <p className="text-sm text-destructive">
+                                    {errors.category}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="room-bed-count">Camas</Label>
+                            <Input
+                                id="room-bed-count"
+                                type="number"
+                                min={1}
+                                value={data.bed_count}
+                                onChange={(event) =>
+                                    setData(
+                                        'bed_count',
+                                        Number(event.target.value),
+                                    )
+                                }
+                            />
+                            {errors.bed_count && (
+                                <p className="text-sm text-destructive">
+                                    {errors.bed_count}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="room-amenities">Comodidades</Label>
+                        <Input
+                            id="room-amenities"
+                            value={data.amenities}
+                            onChange={(event) =>
+                                setData('amenities', event.target.value)
+                            }
+                            placeholder="Wi-Fi, TV, Aire acondicionado"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Separa cada comodidad con una coma.
+                        </p>
+                        {errors.amenities && (
+                            <p className="text-sm text-destructive">
+                                {errors.amenities}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-2">

@@ -19,15 +19,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { roomStatusLabel } from '@/lib/room-status';
 import { status as updateRoomStatus } from '@/routes/reception/rooms';
-import type { ReceptionRoom } from '@/types';
-
-const statusLabels: Record<string, string> = {
-    disponible: 'Disponible',
-    ocupada: 'Ocupada',
-    reservada: 'Reservada',
-    mantenimiento: 'Mantenimiento',
-};
 
 /**
  * Manual room state change with the required operational reason.
@@ -37,7 +30,7 @@ export function RoomStatusDialog({
     statuses,
     onClose,
 }: {
-    room: ReceptionRoom | null;
+    room: { id: number; name: string; status: string } | null;
     statuses: string[];
     onClose: () => void;
 }) {
@@ -84,7 +77,7 @@ export function RoomStatusDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {room
-                            ? `${room.name} · estado actual: ${statusLabels[room.status] ?? room.status}.`
+                            ? `${room.name} · estado actual: ${roomStatusLabel(room.status)}.`
                             : undefined}
                     </DialogDescription>
                 </DialogHeader>
@@ -102,7 +95,7 @@ export function RoomStatusDialog({
                             <SelectContent>
                                 {statuses.map((status) => (
                                     <SelectItem key={status} value={status}>
-                                        {statusLabels[status] ?? status}
+                                        {roomStatusLabel(status)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

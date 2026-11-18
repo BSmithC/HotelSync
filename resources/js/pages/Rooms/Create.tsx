@@ -16,12 +16,24 @@ type Props = {
 };
 
 export default function Create({ areas }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         name: '',
         capacity: 2,
         shape: 'rectangle',
         area_id: areas[0] ? String(areas[0].id) : '',
+        category: '',
+        bed_count: 1,
+        amenities: '',
     });
+
+    transform((values) => ({
+        ...values,
+        category: values.category.trim() === '' ? null : values.category,
+        amenities: values.amenities
+            .split(',')
+            .map((amenity) => amenity.trim())
+            .filter((amenity) => amenity !== ''),
+    }));
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -158,6 +170,72 @@ export default function Create({ areas }: Props) {
                                         </p>
                                     )}
                                 </div>
+
+                                <div>
+                                    <Label className="mb-1.5 block text-sm font-medium text-foreground">
+                                        Categoría
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        value={data.category}
+                                        onChange={(event) =>
+                                            setData(
+                                                'category',
+                                                event.target.value,
+                                            )
+                                        }
+                                        placeholder="Ej. Estándar, Suite, Familiar"
+                                    />
+                                    {errors.category && (
+                                        <p className="mt-1 text-xs text-destructive">
+                                            {errors.category}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <Label className="mb-1.5 block text-sm font-medium text-foreground">
+                                        Cantidad de camas
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        value={data.bed_count}
+                                        onChange={(event) =>
+                                            setData(
+                                                'bed_count',
+                                                Number(event.target.value),
+                                            )
+                                        }
+                                    />
+                                    {errors.bed_count && (
+                                        <p className="mt-1 text-xs text-destructive">
+                                            {errors.bed_count}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label className="mb-1.5 block text-sm font-medium text-foreground">
+                                    Comodidades
+                                </Label>
+                                <Input
+                                    type="text"
+                                    value={data.amenities}
+                                    onChange={(event) =>
+                                        setData('amenities', event.target.value)
+                                    }
+                                    placeholder="Wi-Fi, TV, Aire acondicionado"
+                                />
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Separa cada comodidad con una coma.
+                                </p>
+                                {errors.amenities && (
+                                    <p className="mt-1 text-xs text-destructive">
+                                        {errors.amenities}
+                                    </p>
+                                )}
                             </div>
 
                             <div>

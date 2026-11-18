@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $email
  * @property string $currency
  * @property string $timezone
+ * @property array<string, mixed>|null $settings
  * @property bool $active
  */
 class Hotel extends Model
@@ -38,6 +39,7 @@ class Hotel extends Model
         'email',
         'currency',
         'timezone',
+        'settings',
         'active',
     ];
 
@@ -47,6 +49,7 @@ class Hotel extends Model
     protected function casts(): array
     {
         return [
+            'settings' => 'array',
             'active' => 'boolean',
         ];
     }

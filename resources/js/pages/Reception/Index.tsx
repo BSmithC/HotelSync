@@ -37,6 +37,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { formatDate, formatDateTime } from '@/lib/format';
+import { roomStatusBadgeClass, roomStatusLabel } from '@/lib/room-status';
 import { cn } from '@/lib/utils';
 import { checkOut, index as receptionIndex } from '@/routes/reception';
 import { show as guestShow } from '@/routes/reception/guests';
@@ -63,23 +64,6 @@ type Tab =
     | 'alojados'
     | 'habitaciones'
     | 'incidencias';
-
-const roomStatusLabels: Record<string, string> = {
-    disponible: 'Disponible',
-    ocupada: 'Ocupada',
-    reservada: 'Reservada',
-    mantenimiento: 'Mantenimiento',
-};
-
-const roomStatusStyles: Record<string, string> = {
-    disponible:
-        'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
-    ocupada: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
-    reservada:
-        'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
-    mantenimiento:
-        'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300',
-};
 
 const incidentTypeLabels: Record<string, string> = {
     mantenimiento: 'Mantenimiento',
@@ -122,10 +106,10 @@ function RoomStatusBadge({ status }: { status: string }) {
         <span
             className={cn(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                roomStatusStyles[status] ?? 'bg-muted text-muted-foreground',
+                roomStatusBadgeClass(status),
             )}
         >
-            {roomStatusLabels[status] ?? status}
+            {roomStatusLabel(status)}
         </span>
     );
 }
@@ -722,8 +706,8 @@ export default function Index({
                     />
                     <StatCard
                         label="Habitaciones"
-                        value={`${kpis.availableRooms} / ${roomCounts.disponible + roomCounts.ocupada + roomCounts.reservada + roomCounts.mantenimiento}`}
-                        hint={`${kpis.occupiedRooms} ocupadas · ${roomCounts.mantenimiento} en mantenimiento`}
+                        value={`${kpis.availableRooms} / ${roomCounts.disponible + roomCounts.ocupada + roomCounts.reservada + roomCounts.limpieza + roomCounts.mantenimiento}`}
+                        hint={`${kpis.occupiedRooms} ocupadas · ${roomCounts.limpieza} en limpieza · ${roomCounts.mantenimiento} en mantenimiento`}
                         icon={BedDouble}
                         tone="primary"
                     />
@@ -739,7 +723,7 @@ export default function Index({
                             label: 'Estado de habitación',
                             options: options.roomStatuses.map((status) => ({
                                 value: status,
-                                label: roomStatusLabels[status] ?? status,
+                                label: roomStatusLabel(status),
                             })),
                             value: filters.state,
                         },
@@ -1066,7 +1050,7 @@ export default function Index({
                                     }
                                     onClick={() => visit({ state: status })}
                                 >
-                                    {roomStatusLabels[status] ?? status}
+                                    {roomStatusLabel(status)}
                                     <Badge
                                         variant="secondary"
                                         className="ml-1 h-5 px-1.5 text-[10px]"
@@ -1193,7 +1177,7 @@ export default function Index({
                 title="Registrar check-out"
                 description={
                     checkOutTarget
-                        ? `Se cerrará la estancia de ${guestName(checkOutTarget)} y la habitación ${checkOutTarget.room?.name ?? ''} quedará disponible.`
+                        ? `Se cerrará la estancia de ${guestName(checkOutTarget)} y la habitación ${checkOutTarget.room?.name ?? ''} pasará a limpieza.`
                         : undefined
                 }
                 confirmLabel="Registrar check-out"

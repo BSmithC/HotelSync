@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\RoomAssignment;
 use App\Models\RoomStatusLog;
 use App\Models\User;
+use App\Support\RoomStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -351,8 +352,8 @@ class ReceptionService
     }
 
     /**
-     * A room can host a guest when it is active, not under maintenance and no
-     * other in-house reservation is using it.
+     * A room can host a guest when it is active, clean, not under maintenance
+     * and no other in-house reservation is using it.
      */
     private function assertRoomCanHost(
         Room $room,
@@ -365,13 +366,19 @@ class ReceptionService
             ]);
         }
 
-        if ($room->status === 'mantenimiento') {
+        if ($room->status === RoomStatus::MANTENIMIENTO) {
             throw ValidationException::withMessages([
                 'room_id' => 'La habitación está en mantenimiento.',
             ]);
         }
 
-        if ($requireAvailable && $room->status !== 'disponible') {
+        if ($room->status === RoomStatus::LIMPIEZA) {
+            throw ValidationException::withMessages([
+                'room_id' => 'La habitación está pendiente de limpieza.',
+            ]);
+        }
+
+        if ($requireAvailable && $room->status !== RoomStatus::DISPONIBLE) {
             throw ValidationException::withMessages([
                 'room_id' => 'La habitación destino debe estar disponible.',
             ]);
@@ -392,7 +399,9 @@ class ReceptionService
     }
 
     /**
-     * Free a room unless it is under maintenance.
+     * Hand a room over to housekeeping unless it is under maintenance.
+     *
+     * Reception releases it back to "disponible" once the room is cleaned.
      */
     private function releaseRoom(
         int $roomId,
@@ -402,11 +411,11 @@ class ReceptionService
     ): void {
         $room = Room::query()->lockForUpdate()->find($roomId);
 
-        if ($room === null || $room->status === 'mantenimiento') {
+        if ($room === null || $room->status === RoomStatus::MANTENIMIENTO) {
             return;
         }
 
-        $this->setRoomStatus($room, 'disponible', $user, $reservationId, $reason);
+        $this->setRoomStatus($room, RoomStatus::LIMPIEZA, $user, $reservationId, $reason);
     }
 
     private function setRoomStatus(

@@ -10,6 +10,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\HotelSettingsController;
 use App\Http\Controllers\HotelSwitchController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReceptionController;
@@ -26,6 +27,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Cambio de hotel activo para usuarios con acceso a varios hoteles.
     Route::post('hotels/{hotel}/switch', HotelSwitchController::class)->name('hotels.switch');
+    Route::patch('hotels/current/settings', [HotelSettingsController::class, 'update'])->name('hotels.settings');
+
+    // Plano hotelero: guardado masivo y detalle para el panel lateral.
+    Route::put('rooms/layout', [RoomController::class, 'updateLayout'])->name('rooms.layout');
+    Route::get('rooms/{room}/details', [RoomController::class, 'details'])->name('rooms.details');
 
     // Acciones explícitas de restauración (no dependen de enviar "active" en un update).
     Route::patch('clients/{client}/restore', [ClientController::class, 'restore'])->name('clients.restore');
@@ -37,6 +43,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Las áreas son necesarias para crear habitaciones y no tienen CRUD completo todavía.
     Route::post('areas', [AreaController::class, 'store'])->name('areas.store');
+    Route::patch('areas/{area}', [AreaController::class, 'update'])->name('areas.update');
+    Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
 
     // Centro de operaciones de recepción.
     Route::prefix('reception')->name('reception.')->group(function () {

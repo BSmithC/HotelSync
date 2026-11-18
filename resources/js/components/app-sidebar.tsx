@@ -74,6 +74,7 @@ const navGroups: NavGroup[] = [
                 title: 'Habitaciones',
                 href: '/rooms',
                 icon: BedDouble,
+                permission: 'rooms.view',
             },
             {
                 title: 'Inventario',

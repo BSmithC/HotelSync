@@ -206,6 +206,37 @@ it('rejects a check-in into a room occupied by another guest', function () {
         ->and($arrival->fresh()->checked_in_at)->toBeNull();
 });
 
+it('rejects a check-in into a room pending cleaning', function () {
+    $room = receptionRoom($this->hotel, $this->area, '101', 'limpieza');
+    $client = receptionClient($this->hotel);
+    $arrival = receptionReservation($this->hotel, $this->user, $client, $room);
+
+    $this->actingAs($this->user)
+        ->post("/reception/reservations/{$arrival->id}/check-in")
+        ->assertSessionHasErrors('room_id');
+
+    expect($arrival->fresh()->status)->toBe('Confirmada')
+        ->and($room->fresh()->status)->toBe('limpieza');
+});
+
+it('releases a cleaned room back to available', function () {
+    $room = receptionRoom($this->hotel, $this->area, '101', 'limpieza');
+
+    $this->actingAs($this->user)
+        ->patch("/reception/rooms/{$room->id}/status", [
+            'status' => 'disponible',
+            'reason' => 'Limpieza terminada',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    expect($room->fresh()->status)->toBe('disponible')
+        ->and(RoomStatusLog::query()
+            ->where('room_id', $room->id)
+            ->where('status', 'disponible')
+            ->exists())->toBeTrue();
+});
+
 it('does not expose reservations from another hotel', function () {
     $otherHotel = Hotel::factory()->create(['name' => 'Hotel Sur']);
     $otherArea = Area::create([
@@ -233,7 +264,7 @@ it('does not expose reservations from another hotel', function () {
         ->assertNotFound();
 });
 
-it('registers a check-out and frees the room', function () {
+it('registers a check-out and sends the room to housekeeping', function () {
     $room = receptionRoom($this->hotel, $this->area, '101', 'ocupada');
     $client = receptionClient($this->hotel);
     $reservation = receptionReservation($this->hotel, $this->user, $client, $room, 'En curso', [
@@ -251,7 +282,7 @@ it('registers a check-out and frees the room', function () {
     expect($reservation->status)->toBe('Finalizada')
         ->and($reservation->checked_out_at)->not->toBeNull()
         ->and($reservation->checked_out_by)->toBe($this->user->id)
-        ->and($room->fresh()->status)->toBe('disponible');
+        ->and($room->fresh()->status)->toBe('limpieza');
 
     expect(AuditLog::query()
         ->where('module', 'reception')
@@ -292,7 +323,7 @@ it('moves an in-house guest to another room and logs the assignment', function (
     $reservation->refresh();
 
     expect($reservation->room_id)->toBe($destination->id)
-        ->and($origin->fresh()->status)->toBe('disponible')
+        ->and($origin->fresh()->status)->toBe('limpieza')
         ->and($destination->fresh()->status)->toBe('ocupada');
 
     $assignment = RoomAssignment::query()->where('reservation_id', $reservation->id)->firstOrFail();

@@ -1,92 +1,105 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Pencil } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { RoomActions } from '@/components/rooms/room-actions';
+import { RoomDetailsContent } from '@/components/rooms/room-details-content';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { RoomData } from '@/types';
+import { usePermissions } from '@/hooks/use-permissions';
+import type { RoomDetails, RoomPanelOptions, RoomSharedProps } from '@/types';
 
-type Props = {
-    room: RoomData;
+type Props = RoomPanelOptions & {
+    room: RoomDetails;
 };
 
-export default function Show({ room }: Props) {
+/**
+ * Full room sheet. It shares the drawer content and the same actions, so the
+ * Show route stays useful without duplicating business logic.
+ */
+export default function Show({
+    room,
+    roomsForAssignment,
+    roomsForIncidents,
+    reservationsForIncidents,
+    roomStatuses,
+    incidentTypes,
+    incidentSeverities,
+}: Props) {
+    const { roomStatusColors } = usePage<RoomSharedProps>().props;
+    const { can } = usePermissions();
+
     return (
         <>
             <Head title={room.name} />
 
-            <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
-                <Card>
-                    <CardHeader className="flex flex-row items-start justify-between gap-4">
-                        <div>
-                            <CardTitle>{room.name}</CardTitle>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {room.area?.name ?? 'Sin área'} · Capacidad{' '}
-                                {room.capacity}
-                            </p>
-                        </div>
-                        <Badge variant={room.active ? 'default' : 'secondary'}>
-                            {room.active ? 'Activa' : 'Inactiva'}
-                        </Badge>
-                    </CardHeader>
+            <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h1 className="text-xl font-semibold tracking-tight">
+                            {room.name}
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Ficha operativa de la habitación. Los datos se
+                            actualizan con cada operación de recepción.
+                        </p>
+                    </div>
 
-                    <CardContent className="space-y-4">
-                        <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                            <div>
-                                <dt className="text-muted-foreground">
-                                    Estado operativo
-                                </dt>
-                                <dd className="font-medium">
-                                    {room.status || '—'}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt className="text-muted-foreground">
-                                    Tarifa
-                                </dt>
-                                <dd className="font-medium">
-                                    {room.price
-                                        ? `RD$ ${Number(room.price).toFixed(2)}`
-                                        : 'No definida'}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt className="text-muted-foreground">
-                                    Teléfono
-                                </dt>
-                                <dd className="font-medium">
-                                    {room.phone || '—'}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt className="text-muted-foreground">Forma</dt>
-                                <dd className="font-medium">{room.shape}</dd>
-                            </div>
-                            <div className="sm:col-span-2">
-                                <dt className="text-muted-foreground">
-                                    Descripción
-                                </dt>
-                                <dd className="font-medium">
-                                    {room.description || 'Sin descripción'}
-                                </dd>
-                            </div>
-                        </dl>
-
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" asChild>
-                                <Link href="/rooms">
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Volver
-                                </Link>
-                            </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href="/rooms">
+                                <ArrowLeft className="size-4" />
+                                Volver al plano
+                            </Link>
+                        </Button>
+                        {can('rooms.manage') && (
                             <Button asChild>
                                 <Link href={`/rooms/${room.id}/edit`}>
-                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <Pencil className="size-4" />
                                     Editar
                                 </Link>
                             </Button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+                    <div className="flex min-h-[480px] flex-col overflow-hidden rounded-xl border bg-card">
+                        <RoomDetailsContent
+                            room={room}
+                            colors={roomStatusColors}
+                            className="h-full"
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <div className="overflow-hidden rounded-xl border bg-card">
+                            <RoomActions
+                                room={room}
+                                options={{
+                                    roomsForAssignment,
+                                    roomsForIncidents,
+                                    reservationsForIncidents,
+                                    roomStatuses,
+                                    incidentTypes,
+                                    incidentSeverities,
+                                }}
+                                onRefresh={() => {
+                                    router.reload({
+                                        only: [
+                                            'room',
+                                            'roomsForAssignment',
+                                            'roomsForIncidents',
+                                            'reservationsForIncidents',
+                                        ],
+                                    });
+                                }}
+                            />
                         </div>
-                    </CardContent>
-                </Card>
+
+                        <p className="text-xs text-muted-foreground">
+                            Las acciones de recepción requieren los permisos
+                            correspondientes; el servidor valida cada cambio.
+                        </p>
+                    </div>
+                </div>
             </div>
         </>
     );

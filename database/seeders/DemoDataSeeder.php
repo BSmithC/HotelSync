@@ -98,6 +98,16 @@ class DemoDataSeeder extends Seeder
         if ($alreadySeeded) {
             $this->command->info('Los datos de demostración ya existen; no se duplicaron.');
 
+            // Repair the demo geometry without touching the operational state.
+            if (Area::query()
+                ->where('hotel_id', $hotel->id)
+                ->where('name', 'Área Demo Jardín')
+                ->exists()) {
+                [$garden, $pool, $terrace] = $this->ensureAreas();
+
+                $this->ensureRooms($garden, $pool, $terrace);
+            }
+
             return;
         }
 
@@ -219,19 +229,43 @@ class DemoDataSeeder extends Seeder
      */
     private function ensureAreas(): array
     {
-        $garden = Area::query()->firstOrCreate(
+        $garden = Area::query()->updateOrCreate(
             ['hotel_id' => $this->hotel->id, 'name' => 'Área Demo Jardín'],
-            ['x' => 20, 'y' => 20, 'width' => 420, 'height' => 300],
+            [
+                'x' => 20,
+                'y' => 20,
+                'width' => 420,
+                'height' => 300,
+                'type' => 'jardin',
+                'color' => '#dcfce7',
+                'active' => true,
+            ],
         );
 
-        $pool = Area::query()->firstOrCreate(
+        $pool = Area::query()->updateOrCreate(
             ['hotel_id' => $this->hotel->id, 'name' => 'Área Demo Piscina'],
-            ['x' => 460, 'y' => 20, 'width' => 420, 'height' => 300],
+            [
+                'x' => 460,
+                'y' => 20,
+                'width' => 420,
+                'height' => 300,
+                'type' => 'piscina',
+                'color' => '#dbeafe',
+                'active' => true,
+            ],
         );
 
-        $terrace = Area::query()->firstOrCreate(
+        $terrace = Area::query()->updateOrCreate(
             ['hotel_id' => $this->hotel->id, 'name' => 'Área Demo Terraza'],
-            ['x' => 20, 'y' => 340, 'width' => 860, 'height' => 280],
+            [
+                'x' => 20,
+                'y' => 340,
+                'width' => 860,
+                'height' => 280,
+                'type' => 'terraza',
+                'color' => '#fef3c7',
+                'active' => true,
+            ],
         );
 
         return [$garden, $pool, $terrace];
@@ -243,41 +277,52 @@ class DemoDataSeeder extends Seeder
     private function ensureRooms(Area $garden, Area $pool, Area $terrace): array
     {
         $definitions = [
-            ['key' => 101, 'name' => 'Habitación 101', 'area' => $garden, 'capacity' => 2, 'price' => 5200, 'description' => 'Habitación doble con vista al jardín.', 'pos_x' => 40, 'pos_y' => 60],
-            ['key' => 102, 'name' => 'Habitación 102', 'area' => $garden, 'capacity' => 3, 'price' => 6200, 'description' => 'Habitación familiar con balcón.', 'pos_x' => 190, 'pos_y' => 60],
-            ['key' => 103, 'name' => 'Habitación 103', 'area' => $garden, 'capacity' => 2, 'price' => 4800, 'description' => 'Habitación estándar con cama queen.', 'pos_x' => 340, 'pos_y' => 60],
-            ['key' => 201, 'name' => 'Habitación 201', 'area' => $pool, 'capacity' => 2, 'price' => 7200, 'description' => 'Vista directa a la piscina.', 'pos_x' => 480, 'pos_y' => 70],
-            ['key' => 202, 'name' => 'Habitación 202', 'area' => $pool, 'capacity' => 4, 'price' => 8900, 'description' => 'Suite familiar junto a la piscina.', 'pos_x' => 630, 'pos_y' => 70],
-            ['key' => 203, 'name' => 'Habitación 203', 'area' => $pool, 'capacity' => 2, 'price' => 5400, 'description' => 'Habitación doble con terraza privada.', 'pos_x' => 780, 'pos_y' => 70],
-            ['key' => 301, 'name' => 'Suite 301', 'area' => $terrace, 'capacity' => 2, 'price' => 9800, 'description' => 'Suite con jacuzzi y vista panorámica.', 'pos_x' => 40, 'pos_y' => 380],
-            ['key' => 302, 'name' => 'Suite 302', 'area' => $terrace, 'capacity' => 4, 'price' => 11500, 'description' => 'Suite presidencial con sala y comedor.', 'pos_x' => 220, 'pos_y' => 380],
-            ['key' => 303, 'name' => 'Habitación 303', 'area' => $terrace, 'capacity' => 2, 'price' => 6100, 'description' => 'Habitación con salida a la terraza.', 'pos_x' => 400, 'pos_y' => 380],
+            ['key' => 101, 'name' => 'Habitación 101', 'area' => $garden, 'capacity' => 2, 'category' => 'Estándar', 'beds' => 1, 'price' => 5200, 'description' => 'Habitación doble con vista al jardín.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV'], 'pos_x' => 30, 'pos_y' => 40],
+            ['key' => 102, 'name' => 'Habitación 102', 'area' => $garden, 'capacity' => 3, 'category' => 'Familiar', 'beds' => 2, 'price' => 6200, 'description' => 'Habitación familiar con balcón.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Balcón'], 'pos_x' => 160, 'pos_y' => 40],
+            ['key' => 103, 'name' => 'Habitación 103', 'area' => $garden, 'capacity' => 2, 'category' => 'Estándar', 'beds' => 1, 'price' => 4800, 'description' => 'Habitación estándar con cama queen.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV'], 'pos_x' => 290, 'pos_y' => 40],
+            ['key' => 201, 'name' => 'Habitación 201', 'area' => $pool, 'capacity' => 2, 'category' => 'Estándar', 'beds' => 1, 'price' => 7200, 'description' => 'Vista directa a la piscina.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Vista a la piscina'], 'pos_x' => 30, 'pos_y' => 70],
+            ['key' => 202, 'name' => 'Habitación 202', 'area' => $pool, 'capacity' => 4, 'category' => 'Suite', 'beds' => 2, 'price' => 8900, 'description' => 'Suite familiar junto a la piscina.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Sala', 'Vista a la piscina'], 'pos_x' => 160, 'pos_y' => 70],
+            ['key' => 203, 'name' => 'Habitación 203', 'area' => $pool, 'capacity' => 2, 'category' => 'Estándar', 'beds' => 1, 'price' => 5400, 'description' => 'Habitación doble con terraza privada.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Terraza privada'], 'pos_x' => 290, 'pos_y' => 70],
+            ['key' => 301, 'name' => 'Suite 301', 'area' => $terrace, 'capacity' => 2, 'category' => 'Suite', 'beds' => 1, 'price' => 9800, 'description' => 'Suite con jacuzzi y vista panorámica.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Jacuzzi'], 'pos_x' => 40, 'pos_y' => 90],
+            ['key' => 302, 'name' => 'Suite 302', 'area' => $terrace, 'capacity' => 4, 'category' => 'Suite Presidencial', 'beds' => 2, 'price' => 11500, 'description' => 'Suite presidencial con sala y comedor.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Sala', 'Comedor', 'Jacuzzi'], 'pos_x' => 220, 'pos_y' => 90],
+            ['key' => 303, 'name' => 'Habitación 303', 'area' => $terrace, 'capacity' => 2, 'category' => 'Estándar', 'beds' => 1, 'price' => 6100, 'description' => 'Habitación con salida a la terraza.', 'amenities' => ['Wi-Fi', 'Aire acondicionado', 'TV', 'Salida a la terraza'], 'pos_x' => 400, 'pos_y' => 90],
         ];
 
         $rooms = [];
 
         foreach ($definitions as $definition) {
-            $rooms[$definition['key']] = Room::query()->firstOrCreate(
-                [
-                    'hotel_id' => $this->hotel->id,
-                    'name' => $definition['name'],
-                ],
-                [
-                    'capacity' => $definition['capacity'],
-                    'area_id' => $definition['area']->id,
-                    'shape' => 'rectangle',
-                    'pos_x' => $definition['pos_x'],
-                    'pos_y' => $definition['pos_y'],
-                    'width' => 120,
-                    'height' => 90,
-                    'rotation' => 0,
-                    'active' => true,
-                    'description' => $definition['description'],
-                    'price' => $definition['price'],
-                    'phone' => '809-555-02'.$definition['key'],
-                    'status' => 'disponible',
-                ],
-            );
+            $room = Room::query()->firstOrNew([
+                'hotel_id' => $this->hotel->id,
+                'name' => $definition['name'],
+            ]);
+
+            // A demo room that already exists keeps its operational state; the
+            // seeder only realigns the layout and the descriptive profile.
+            $attributes = [
+                'capacity' => $definition['capacity'],
+                'category' => $definition['category'],
+                'bed_count' => $definition['beds'],
+                'amenities' => $definition['amenities'],
+                'area_id' => $definition['area']->id,
+                'shape' => 'rectangle',
+                'pos_x' => $definition['pos_x'],
+                'pos_y' => $definition['pos_y'],
+                'width' => 120,
+                'height' => 90,
+                'rotation' => 0,
+                'description' => $definition['description'],
+                'price' => $definition['price'],
+                'phone' => '809-555-02'.$definition['key'],
+            ];
+
+            if (! $room->exists) {
+                $attributes['status'] = 'disponible';
+                $attributes['active'] = true;
+            }
+
+            $room->fill($attributes)->save();
+
+            $rooms[$definition['key']] = $room->refresh();
         }
 
         return $rooms;
@@ -288,8 +333,8 @@ class DemoDataSeeder extends Seeder
         $definitions = [
             ['name' => 'Cama Demo Jardín 1', 'area' => $garden, 'capacity' => 2, 'pos_x' => 80, 'pos_y' => 120],
             ['name' => 'Cama Demo Jardín 2', 'area' => $garden, 'capacity' => 1, 'pos_x' => 160, 'pos_y' => 120],
-            ['name' => 'Cama Demo Terraza 1', 'area' => $terrace, 'capacity' => 2, 'pos_x' => 90, 'pos_y' => 430],
-            ['name' => 'Cama Demo Terraza 2', 'area' => $terrace, 'capacity' => 2, 'pos_x' => 190, 'pos_y' => 430],
+            ['name' => 'Cama Demo Terraza 1', 'area' => $terrace, 'capacity' => 2, 'pos_x' => 90, 'pos_y' => 140],
+            ['name' => 'Cama Demo Terraza 2', 'area' => $terrace, 'capacity' => 2, 'pos_x' => 190, 'pos_y' => 140],
         ];
 
         foreach ($definitions as $definition) {

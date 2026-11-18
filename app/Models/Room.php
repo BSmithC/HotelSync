@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $hotel_id
  * @property string $name
  * @property int $capacity
+ * @property string|null $category
+ * @property int $bed_count
+ * @property array<int, string>|null $amenities
  * @property int $area_id
  * @property string $shape
  * @property int|null $pos_y
@@ -34,6 +37,9 @@ class Room extends Model
         'hotel_id',
         'name',
         'capacity',
+        'category',
+        'bed_count',
+        'amenities',
         'area_id',
         'shape',
         'pos_y',
@@ -55,6 +61,8 @@ class Room extends Model
     {
         return [
             'active' => 'boolean',
+            'bed_count' => 'integer',
+            'amenities' => 'array',
             'price' => 'decimal:2',
         ];
     }
@@ -81,6 +89,22 @@ class Room extends Model
     public function statusLogs(): HasMany
     {
         return $this->hasMany(RoomStatusLog::class);
+    }
+
+    /**
+     * @return HasMany<RoomAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(RoomAssignment::class, 'to_room_id');
+    }
+
+    /**
+     * @return HasMany<Incident, $this>
+     */
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(Incident::class);
     }
 
     /**

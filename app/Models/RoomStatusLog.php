@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use App\Support\RoomStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -28,7 +29,7 @@ class RoomStatusLog extends Model
     /**
      * @var list<string>
      */
-    public const STATUSES = ['disponible', 'ocupada', 'reservada', 'mantenimiento'];
+    public const STATUSES = RoomStatus::ALL;
 
     protected $fillable = [
         'hotel_id',

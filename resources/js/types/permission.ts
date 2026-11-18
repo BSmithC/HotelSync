@@ -23,6 +23,9 @@ export const permissionValues = [
     'employees.access',
     'reports.view',
     'reports.export',
+    'rooms.view',
+    'rooms.manage',
+    'rooms.layout',
 ] as const;
 
 export type Permission = (typeof permissionValues)[number];

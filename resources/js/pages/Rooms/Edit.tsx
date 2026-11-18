@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ROOM_STATUS_KEYS, roomStatusLabel } from '@/lib/room-status';
 import type { AreaData, RoomData } from '@/types';
 
 type Props = {
@@ -18,10 +19,13 @@ type Props = {
 };
 
 export default function Edit({ room, areas }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, transform } = useForm({
         settings: true,
         name: room.name,
         capacity: room.capacity,
+        category: room.category ?? '',
+        bed_count: room.bed_count,
+        amenities: room.amenities.join(', '),
         shape: room.shape,
         area_id: String(room.area_id),
         description: room.description ?? '',
@@ -29,6 +33,15 @@ export default function Edit({ room, areas }: Props) {
         phone: room.phone ?? '',
         status: room.status ?? 'disponible',
     });
+
+    transform((values) => ({
+        ...values,
+        category: values.category.trim() === '' ? null : values.category,
+        amenities: values.amenities
+            .split(',')
+            .map((amenity) => amenity.trim())
+            .filter((amenity) => amenity !== ''),
+    }));
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -85,6 +98,46 @@ export default function Edit({ room, areas }: Props) {
                                 {errors.capacity && (
                                     <p className="text-sm text-destructive">
                                         {errors.capacity}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="category">Categoría</Label>
+                                <Input
+                                    id="category"
+                                    value={data.category}
+                                    onChange={(event) =>
+                                        setData('category', event.target.value)
+                                    }
+                                    placeholder="Ej. Estándar, Suite"
+                                />
+                                {errors.category && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.category}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="bed_count">
+                                    Cantidad de camas
+                                </Label>
+                                <Input
+                                    id="bed_count"
+                                    type="number"
+                                    min={1}
+                                    value={data.bed_count}
+                                    onChange={(event) =>
+                                        setData(
+                                            'bed_count',
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                />
+                                {errors.bed_count && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.bed_count}
                                     </p>
                                 )}
                             </div>
@@ -179,18 +232,11 @@ export default function Edit({ room, areas }: Props) {
                                         <SelectValue placeholder="Selecciona un estado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="disponible">
-                                            Disponible
-                                        </SelectItem>
-                                        <SelectItem value="ocupada">
-                                            Ocupada
-                                        </SelectItem>
-                                        <SelectItem value="reservada">
-                                            Reservada
-                                        </SelectItem>
-                                        <SelectItem value="mantenimiento">
-                                            Mantenimiento
-                                        </SelectItem>
+                                        {ROOM_STATUS_KEYS.map((key) => (
+                                            <SelectItem key={key} value={key}>
+                                                {roomStatusLabel(key)}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                                 {errors.status && (
@@ -199,6 +245,26 @@ export default function Edit({ room, areas }: Props) {
                                     </p>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="amenities">Comodidades</Label>
+                            <Input
+                                id="amenities"
+                                value={data.amenities}
+                                onChange={(event) =>
+                                    setData('amenities', event.target.value)
+                                }
+                                placeholder="Wi-Fi, TV, Aire acondicionado"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Separa cada comodidad con una coma.
+                            </p>
+                            {errors.amenities && (
+                                <p className="text-sm text-destructive">
+                                    {errors.amenities}
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">

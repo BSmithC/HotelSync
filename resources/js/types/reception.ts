@@ -77,6 +77,7 @@ export type ReceptionRoomCounts = {
     disponible: number;
     ocupada: number;
     reservada: number;
+    limpieza: number;
     mantenimiento: number;
 };
 

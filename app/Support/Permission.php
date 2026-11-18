@@ -34,6 +34,10 @@ enum Permission: string
     case ReportsView = 'reports.view';
     case ReportsExport = 'reports.export';
 
+    case RoomsView = 'rooms.view';
+    case RoomsManage = 'rooms.manage';
+    case RoomsLayout = 'rooms.layout';
+
     /**
      * Roles allowed to perform this ability.
      *
@@ -106,6 +110,20 @@ enum Permission: string
                 Role::Admin,
                 Role::Finance,
             ],
+
+            self::RoomsView => [
+                Role::Owner,
+                Role::Admin,
+                Role::Reception,
+                Role::Finance,
+                Role::Services,
+            ],
+
+            self::RoomsManage,
+            self::RoomsLayout => [
+                Role::Owner,
+                Role::Admin,
+            ],
         };
     }
 
@@ -133,6 +151,9 @@ enum Permission: string
             self::EmployeesAccess => 'Asignar accesos',
             self::ReportsView => 'Ver reportes',
             self::ReportsExport => 'Exportar reportes',
+            self::RoomsView => 'Ver habitaciones',
+            self::RoomsManage => 'Gestionar habitaciones',
+            self::RoomsLayout => 'Editar plano de habitaciones',
         };
     }
 
