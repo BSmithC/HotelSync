@@ -23,6 +23,9 @@ class Bill extends Model
         'status',
         'notes',
         'active',
+        'voided_by',
+        'voided_at',
+        'void_reason',
     ];
 
     /**
@@ -36,6 +39,7 @@ class Bill extends Model
             'tax' => 'decimal:2',
             'total' => 'decimal:2',
             'active' => 'boolean',
+            'voided_at' => 'datetime',
         ];
     }
 
@@ -52,5 +56,33 @@ class Bill extends Model
     public function details(): HasMany
     {
         return $this->hasMany(BillDetail::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function voidedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    /**
+     * Amount collected through registered (not voided) payments.
+     */
+    public function paidTotal(): float
+    {
+        return round((float) $this->payments()
+            ->where('status', 'registrado')
+            ->sum('amount'), 2);
+    }
+
+    /**
+     * Amount still owed for this invoice.
+     */
+    public function balance(): float
+    {
+        return round((float) $this->total - $this->paidTotal(), 2);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bill;
 use App\Models\Client;
+use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Support\CurrentHotel;
@@ -150,13 +151,17 @@ class DashboardController extends Controller
             ->sum('total'), 2);
     }
 
+    /**
+     * Real collections come from registered payments, not from the invoice
+     * status, so partial payments are reflected immediately.
+     */
     private function paidBetween(string $from, string $to): float
     {
-        return round((float) $this->billQuery()
-            ->where('status', 'Pagada')
-            ->whereDate('issued_at', '>=', $from)
-            ->whereDate('issued_at', '<=', $to)
-            ->sum('total'), 2);
+        return round((float) Payment::query()
+            ->where('status', 'registrado')
+            ->whereDate('paid_at', '>=', $from)
+            ->whereDate('paid_at', '<=', $to)
+            ->sum('amount'), 2);
     }
 
     private function percentChange(float $current, float $previous): ?float
@@ -185,17 +190,23 @@ class DashboardController extends Controller
             fn (Bill $bill) => $bill->issued_at?->toDateString(),
         );
 
+        $paymentsByDate = Payment::query()
+            ->where('status', 'registrado')
+            ->whereDate('paid_at', '>=', $start->toDateString())
+            ->whereDate('paid_at', '<=', $today->toDateString())
+            ->get(['paid_at', 'amount'])
+            ->groupBy(fn (Payment $payment) => $payment->paid_at?->toDateString());
+
         return collect(range(0, 29))
-            ->map(function (int $offset) use ($start, $byDate): array {
+            ->map(function (int $offset) use ($start, $byDate, $paymentsByDate): array {
                 $date = $start->copy()->addDays($offset)->toDateString();
                 $dayBills = $byDate->get($date, collect());
+                $dayPayments = $paymentsByDate->get($date, collect());
 
                 return [
                     'date' => $date,
                     'invoiced' => round((float) $dayBills->sum('total'), 2),
-                    'paid' => round((float) $dayBills
-                        ->where('status', 'Pagada')
-                        ->sum('total'), 2),
+                    'paid' => round((float) $dayPayments->sum('amount'), 2),
                 ];
             })
             ->values()

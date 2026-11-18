@@ -8,6 +8,7 @@ use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\HotelSwitchController;
 use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\ReservationController;
@@ -43,6 +44,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('incidents', [ReceptionController::class, 'storeIncident'])->name('incidents.store');
         Route::patch('incidents/{incident}', [ReceptionController::class, 'updateIncident'])->name('incidents.update');
         Route::patch('rooms/{room}/status', [ReceptionController::class, 'updateRoomStatus'])->name('rooms.status');
+    });
+
+    // Centro de operaciones financieras: cobros, gastos y libro de movimientos.
+    Route::prefix('finance')->name('finance.')->group(function () {
+        Route::get('/', [FinanceController::class, 'index'])->name('index');
+        Route::get('export', [FinanceController::class, 'export'])->name('export');
+        Route::post('payments', [FinanceController::class, 'storePayment'])->name('payments.store');
+        Route::post('payments/{payment}/void', [FinanceController::class, 'voidPayment'])->name('payments.void');
+        Route::post('expenses', [FinanceController::class, 'storeExpense'])->name('expenses.store');
+        Route::post('expenses/{expense}/void', [FinanceController::class, 'voidExpense'])->name('expenses.void');
+        Route::post('bills/{bill}/void', [FinanceController::class, 'voidBill'])->name('bills.void');
     });
 
     Route::resources([

@@ -4,6 +4,7 @@ use App\Models\Area;
 use App\Models\Bill;
 use App\Models\Client;
 use App\Models\Hotel;
+use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\User;
@@ -142,7 +143,7 @@ test('calculates the dashboard metrics from real records', function () {
         'status' => 'Cancelada',
     ]);
 
-    Bill::create([
+    $paidToday = Bill::create([
         'client_id' => $client->id,
         'number' => 'FAC-0001',
         'issued_at' => '2026-11-18',
@@ -162,7 +163,7 @@ test('calculates the dashboard metrics from real records', function () {
         'status' => 'Pendiente',
     ]);
 
-    Bill::create([
+    $paidLastMonth = Bill::create([
         'client_id' => $client->id,
         'number' => 'FAC-0003',
         'issued_at' => '2026-10-15',
@@ -170,6 +171,27 @@ test('calculates the dashboard metrics from real records', function () {
         'tax' => 0,
         'total' => 236,
         'status' => 'Pagada',
+    ]);
+
+    // Real collections come from payments: one today and one last month.
+    Payment::create([
+        'bill_id' => $paidToday->id,
+        'client_id' => $client->id,
+        'method' => 'efectivo',
+        'amount' => 118,
+        'paid_at' => '2026-11-18',
+        'status' => 'registrado',
+        'created_by' => $this->user->id,
+    ]);
+
+    Payment::create([
+        'bill_id' => $paidLastMonth->id,
+        'client_id' => $client->id,
+        'method' => 'transferencia',
+        'amount' => 236,
+        'paid_at' => '2026-10-15',
+        'status' => 'registrado',
+        'created_by' => $this->user->id,
     ]);
 
     // Voided bills must not count as revenue.

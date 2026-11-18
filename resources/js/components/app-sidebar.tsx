@@ -81,6 +81,12 @@ const navGroups: NavGroup[] = [
         label: 'Finanzas',
         items: [
             {
+                title: 'Finanzas',
+                href: '/finance',
+                icon: Wallet,
+                permission: 'finance.view',
+            },
+            {
                 title: 'Facturación',
                 href: '/bills',
                 icon: ReceiptText,
@@ -105,13 +111,6 @@ const navGroups: NavGroup[] = [
     {
         label: 'Próximamente',
         items: [
-            {
-                title: 'Finanzas',
-                href: '/bills',
-                icon: Wallet,
-                disabled: true,
-                badge: comingSoon,
-            },
             {
                 title: 'Inventario',
                 href: '/rooms',
