@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Area;
+use App\Models\AuditLog;
 use App\Models\Bill;
 use App\Models\Branch;
 use App\Models\Building;
@@ -57,6 +58,13 @@ it('creates a reservation linked to a client and a room', function () {
         ->and($reservation->user_id)->toBe($this->user->id)
         ->and($reservation->status)->toBe('Confirmada');
 
+    expect(AuditLog::query()
+        ->where('module', 'reception')
+        ->where('action', 'reservation_created')
+        ->where('subject_id', $reservation->id)
+        ->where('user_id', $this->user->id)
+        ->exists())->toBeTrue();
+
     $this->actingAs($this->user)
         ->get('/reservations')
         ->assertOk()
@@ -86,6 +94,17 @@ it('deactivates and restores a reservation', function () {
         ->assertRedirect('/reservations');
 
     expect($reservation->fresh()->active)->toBeTrue();
+
+    expect(AuditLog::query()
+        ->where('module', 'reception')
+        ->where('action', 'reservation_deactivated')
+        ->where('subject_id', $reservation->id)
+        ->exists())->toBeTrue()
+        ->and(AuditLog::query()
+            ->where('module', 'reception')
+            ->where('action', 'reservation_restored')
+            ->where('subject_id', $reservation->id)
+            ->exists())->toBeTrue();
 });
 
 it('creates a bill with the total calculated from subtotal and tax', function () {
@@ -106,6 +125,13 @@ it('creates a bill with the total calculated from subtotal and tax', function ()
         ->and((float) $bill->tax)->toBe(18.0)
         ->and((float) $bill->total)->toBe(118.0)
         ->and($bill->client_id)->toBe($this->client->id);
+
+    expect(AuditLog::query()
+        ->where('module', 'billing')
+        ->where('action', 'bill_created')
+        ->where('subject_id', $bill->id)
+        ->where('user_id', $this->user->id)
+        ->exists())->toBeTrue();
 
     $this->actingAs($this->user)
         ->get('/bills')

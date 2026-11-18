@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bill;
 use App\Models\Client;
 use App\Models\Reservation;
+use App\Services\AuditLogger;
 use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -102,14 +103,26 @@ class BillController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuditLogger $audit): RedirectResponse
     {
         $validated = $request->validate($this->rules());
 
         $validated['tax'] ??= 0;
         $validated['total'] = round($validated['subtotal'] + $validated['tax'], 2);
 
-        Bill::create($validated);
+        $bill = Bill::create($validated);
+
+        $audit->record(
+            module: 'billing',
+            action: 'bill_created',
+            subject: $bill,
+            description: "Factura {$bill->number} creada",
+            changes: [
+                'number' => $bill->number,
+                'total' => (float) $bill->total,
+                'status' => $bill->status,
+            ],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se registró correctamente.']);
 
@@ -143,7 +156,7 @@ class BillController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(Request $request, string $id, AuditLogger $audit): RedirectResponse
     {
         $bill = Bill::findOrFail($id);
 
@@ -152,7 +165,20 @@ class BillController extends Controller
         $validated['tax'] ??= 0;
         $validated['total'] = round($validated['subtotal'] + $validated['tax'], 2);
 
+        $before = $bill->only(['number', 'subtotal', 'tax', 'total', 'status', 'active']);
+
         $bill->update($validated);
+
+        $audit->record(
+            module: 'billing',
+            action: 'bill_updated',
+            subject: $bill,
+            description: "Factura {$bill->number} actualizada",
+            changes: [
+                'before' => $before,
+                'after' => $bill->only(['number', 'subtotal', 'tax', 'total', 'status', 'active']),
+            ],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se actualizó correctamente.']);
 
@@ -162,11 +188,19 @@ class BillController extends Controller
     /**
      * Deactivate the specified resource.
      */
-    public function destroy(string $id): RedirectResponse
+    public function destroy(string $id, AuditLogger $audit): RedirectResponse
     {
         $bill = Bill::findOrFail($id);
 
         $bill->update(['active' => false]);
+
+        $audit->record(
+            module: 'billing',
+            action: 'bill_deactivated',
+            subject: $bill,
+            description: "Factura {$bill->number} desactivada",
+            changes: ['active' => false, 'total' => (float) $bill->total],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se desactivó correctamente.']);
 
@@ -176,9 +210,17 @@ class BillController extends Controller
     /**
      * Restore a previously deactivated bill.
      */
-    public function restore(Bill $bill): RedirectResponse
+    public function restore(Bill $bill, AuditLogger $audit): RedirectResponse
     {
         $bill->update(['active' => true]);
+
+        $audit->record(
+            module: 'billing',
+            action: 'bill_restored',
+            subject: $bill,
+            description: "Factura {$bill->number} restaurada",
+            changes: ['active' => true, 'total' => (float) $bill->total],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se restauró correctamente.']);
 

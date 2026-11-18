@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToHotel;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -23,8 +24,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string|null $description
  * @property array<string, mixed>|null $changes
  * @property string|null $ip
- * @property \Carbon\CarbonImmutable|null $created_at
- * @property \Carbon\CarbonImmutable|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read User|null $user
  */
 class AuditLog extends Model
 {
@@ -66,5 +68,15 @@ class AuditLog extends Model
     public function subject(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Name of the acting user, or "Sistema" for automated operations.
+     */
+    public function actorName(): string
+    {
+        $actor = $this->getRelationValue('user');
+
+        return $actor instanceof User ? $actor->name : 'Sistema';
     }
 }

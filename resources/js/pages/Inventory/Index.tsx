@@ -7,6 +7,7 @@ import {
     Ban,
     Boxes,
     ClipboardList,
+    History,
     Package,
     Pencil,
     Plus,
@@ -28,7 +29,12 @@ import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { formatCurrency, formatDate, formatNumber } from '@/lib/format';
+import {
+    formatCurrency,
+    formatDate,
+    formatDateTime,
+    formatNumber,
+} from '@/lib/format';
 import {
     inventoryCategoryLabels,
     inventoryLabel,
@@ -39,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { index as inventoryIndex } from '@/routes/inventory';
 import { voidMethod as voidMovement } from '@/routes/inventory/movements';
 import type {
+    InventoryActivity,
     InventoryAlert,
     InventoryIndexProps,
     InventoryItem,
@@ -100,11 +107,32 @@ function MovementTypeBadge({ movement }: { movement: InventoryMovement }) {
     );
 }
 
+const activityModuleStyles: Record<string, string> = {
+    reception: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+    finance:
+        'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300',
+    billing:
+        'bg-violet-100 text-violet-800 dark:bg-violet-500/15 dark:text-violet-300',
+    inventory:
+        'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+    services:
+        'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/15 dark:text-indigo-300',
+    employees:
+        'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300',
+};
+
+const activityToneStyles: Record<InventoryActivity['tone'], string> = {
+    danger: 'text-destructive',
+    success: 'text-success',
+    info: 'text-foreground',
+};
+
 export default function Index({
     currency,
     kpis,
     items,
     movements,
+    activity,
     alerts,
     itemsForMovement,
     filters,
@@ -112,6 +140,8 @@ export default function Index({
     permissions,
 }: InventoryIndexProps) {
     const tab = filters.tab;
+    const activityScope =
+        filters.activity_scope === 'inventario' ? 'inventario' : 'sistema';
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
     const [movementOpen, setMovementOpen] = useState(false);
@@ -394,10 +424,77 @@ export default function Index({
         },
     ];
 
+    const activityColumns: DataTableColumn<InventoryActivity>[] = [
+        {
+            id: 'createdAt',
+            header: 'Fecha',
+            cell: (row) => (
+                <div className="whitespace-nowrap">
+                    <p className="text-sm text-foreground">
+                        {formatDateTime(row.createdAt)}
+                    </p>
+                    {row.subject && (
+                        <p className="text-xs text-muted-foreground">
+                            Ref. {row.subject}
+                        </p>
+                    )}
+                </div>
+            ),
+        },
+        {
+            id: 'module',
+            header: 'Módulo',
+            cell: (row) => (
+                <span
+                    className={cn(
+                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                        activityModuleStyles[row.module] ??
+                            'bg-muted text-muted-foreground',
+                    )}
+                >
+                    {row.moduleLabel}
+                </span>
+            ),
+        },
+        {
+            id: 'action',
+            header: 'Acción',
+            cell: (row) => (
+                <span
+                    className={cn('font-medium', activityToneStyles[row.tone])}
+                >
+                    {row.actionLabel}
+                </span>
+            ),
+        },
+        {
+            id: 'description',
+            header: 'Detalle',
+            cell: (row) => (
+                <p
+                    className="max-w-80 truncate text-sm text-muted-foreground"
+                    title={row.description}
+                >
+                    {row.description}
+                </p>
+            ),
+        },
+        {
+            id: 'actor',
+            header: 'Usuario',
+            cell: (row) => row.actor,
+        },
+    ];
+
     const tabs: { id: InventoryTab; label: string; count?: number }[] = [
         { id: 'resumen', label: 'Resumen' },
         { id: 'articulos', label: 'Artículos', count: items.total },
-        { id: 'movimientos', label: 'Movimientos', count: movements.total },
+        {
+            id: 'movimientos',
+            label: 'Movimientos',
+            count:
+                activityScope === 'sistema' ? activity.total : movements.total,
+        },
     ];
 
     const alertActions = (alert: InventoryAlert) => {
@@ -792,58 +889,156 @@ export default function Index({
 
                 {tab === 'movimientos' && (
                     <div className="space-y-3">
-                        <ListFilters
-                            url={inventoryIndex.url()}
-                            search={filters.search}
-                            searchPlaceholder="Buscar artículo, motivo o referencia…"
-                            extraParams={{
-                                from: filters.from,
-                                to: filters.to,
-                                tab,
-                            }}
-                            selects={[
-                                {
-                                    key: 'movement_type',
-                                    label: 'Tipo',
-                                    value: filters.movement_type,
-                                    options: options.movementTypes.map(
-                                        (value) => ({
-                                            value,
-                                            label: inventoryLabel(
-                                                inventoryMovementTypeLabels,
-                                                value,
-                                            ),
-                                        }),
-                                    ),
-                                },
-                                {
-                                    key: 'movement_state',
-                                    label: 'Estado',
-                                    value: filters.movement_state,
-                                    options: [
-                                        { value: 'vigente', label: 'Vigente' },
-                                        { value: 'anulado', label: 'Anulado' },
-                                        { value: 'reverso', label: 'Reverso' },
-                                    ],
-                                },
-                            ]}
-                        />
+                        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        activityScope === 'sistema'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
+                                    onClick={() =>
+                                        visit({
+                                            activity_scope: 'sistema',
+                                            activity_module: '',
+                                        })
+                                    }
+                                >
+                                    Todo el sistema
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={
+                                        activityScope === 'inventario'
+                                            ? 'default'
+                                            : 'ghost'
+                                    }
+                                    onClick={() =>
+                                        visit({
+                                            activity_scope: 'inventario',
+                                            activity_module: '',
+                                        })
+                                    }
+                                >
+                                    Solo inventario
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {activityScope === 'sistema'
+                                    ? 'Actividad registrada en gestión, finanzas, facturación, servicios, empleados e inventario.'
+                                    : 'Entradas, salidas y ajustes con su trazabilidad completa.'}
+                            </p>
+                        </div>
 
-                        <DataTable
-                            caption="Libro de movimientos de inventario"
-                            columns={movementColumns}
-                            rows={movements.data}
-                            rowKey={(movement) => movement.id}
-                            empty={
-                                <EmptyState
-                                    icon={ClipboardList}
-                                    title="Sin movimientos en el período"
-                                    description="Ajusta las fechas o registra una entrada, salida o ajuste."
+                        {activityScope === 'sistema' ? (
+                            <>
+                                <ListFilters
+                                    key="system-activity"
+                                    url={inventoryIndex.url()}
+                                    search={filters.search}
+                                    searchPlaceholder="Buscar acción, detalle o usuario…"
+                                    extraParams={{
+                                        from: filters.from,
+                                        to: filters.to,
+                                        tab,
+                                        activity_scope: 'sistema',
+                                    }}
+                                    selects={[
+                                        {
+                                            key: 'activity_module',
+                                            label: 'Módulo',
+                                            value: filters.activity_module,
+                                            options: options.activityModules,
+                                        },
+                                    ]}
                                 />
-                            }
-                        />
 
-                        <Pagination meta={movements} />
+                                <DataTable
+                                    caption="Actividad del sistema"
+                                    columns={activityColumns}
+                                    rows={activity.data}
+                                    rowKey={(row) => row.id}
+                                    empty={
+                                        <EmptyState
+                                            icon={History}
+                                            title="Sin actividad en el período"
+                                            description="Ajusta las fechas o el módulo para ver los movimientos del sistema."
+                                        />
+                                    }
+                                />
+
+                                <Pagination meta={activity} />
+                            </>
+                        ) : (
+                            <>
+                                <ListFilters
+                                    key="inventory-ledger"
+                                    url={inventoryIndex.url()}
+                                    search={filters.search}
+                                    searchPlaceholder="Buscar artículo, motivo o referencia…"
+                                    extraParams={{
+                                        from: filters.from,
+                                        to: filters.to,
+                                        tab,
+                                        activity_scope: 'inventario',
+                                    }}
+                                    selects={[
+                                        {
+                                            key: 'movement_type',
+                                            label: 'Tipo',
+                                            value: filters.movement_type,
+                                            options: options.movementTypes.map(
+                                                (value) => ({
+                                                    value,
+                                                    label: inventoryLabel(
+                                                        inventoryMovementTypeLabels,
+                                                        value,
+                                                    ),
+                                                }),
+                                            ),
+                                        },
+                                        {
+                                            key: 'movement_state',
+                                            label: 'Estado',
+                                            value: filters.movement_state,
+                                            options: [
+                                                {
+                                                    value: 'vigente',
+                                                    label: 'Vigente',
+                                                },
+                                                {
+                                                    value: 'anulado',
+                                                    label: 'Anulado',
+                                                },
+                                                {
+                                                    value: 'reverso',
+                                                    label: 'Reverso',
+                                                },
+                                            ],
+                                        },
+                                    ]}
+                                />
+
+                                <DataTable
+                                    caption="Libro de movimientos de inventario"
+                                    columns={movementColumns}
+                                    rows={movements.data}
+                                    rowKey={(movement) => movement.id}
+                                    empty={
+                                        <EmptyState
+                                            icon={ClipboardList}
+                                            title="Sin movimientos en el período"
+                                            description="Ajusta las fechas o registra una entrada, salida o ajuste."
+                                        />
+                                    }
+                                />
+
+                                <Pagination meta={movements} />
+                            </>
+                        )}
                     </div>
                 )}
             </div>

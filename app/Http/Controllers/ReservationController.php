@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Reservation;
 use App\Models\Room;
+use App\Services\AuditLogger;
 use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -91,14 +92,27 @@ class ReservationController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuditLogger $audit): RedirectResponse
     {
         $validated = $request->validate($this->rules());
 
-        Reservation::create([
+        $reservation = Reservation::create([
             ...$validated,
             'user_id' => $request->user()->id,
         ]);
+
+        $audit->record(
+            module: 'reception',
+            action: 'reservation_created',
+            subject: $reservation,
+            description: "Reservación #{$reservation->id} creada para el {$reservation->reserved_at->toDateString()}",
+            changes: [
+                'client_id' => $reservation->client_id,
+                'room_id' => $reservation->room_id,
+                'reserved_at' => $reservation->reserved_at->toIso8601String(),
+                'status' => $reservation->status,
+            ],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se registró correctamente.']);
 
@@ -132,11 +146,24 @@ class ReservationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(Request $request, string $id, AuditLogger $audit): RedirectResponse
     {
         $reservation = Reservation::findOrFail($id);
 
+        $before = $reservation->only(['client_id', 'room_id', 'reserved_at', 'finished_at', 'guests', 'status', 'active']);
+
         $reservation->update($request->validate($this->rules()));
+
+        $audit->record(
+            module: 'reception',
+            action: 'reservation_updated',
+            subject: $reservation,
+            description: "Reservación #{$reservation->id} actualizada",
+            changes: [
+                'before' => $before,
+                'after' => $reservation->only(['client_id', 'room_id', 'reserved_at', 'finished_at', 'guests', 'status', 'active']),
+            ],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se actualizó correctamente.']);
 
@@ -146,11 +173,19 @@ class ReservationController extends Controller
     /**
      * Deactivate the specified resource.
      */
-    public function destroy(string $id): RedirectResponse
+    public function destroy(string $id, AuditLogger $audit): RedirectResponse
     {
         $reservation = Reservation::findOrFail($id);
 
         $reservation->update(['active' => false]);
+
+        $audit->record(
+            module: 'reception',
+            action: 'reservation_deactivated',
+            subject: $reservation,
+            description: "Reservación #{$reservation->id} desactivada",
+            changes: ['active' => false, 'status' => $reservation->status],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se desactivó correctamente.']);
 
@@ -160,9 +195,17 @@ class ReservationController extends Controller
     /**
      * Restore a previously deactivated reservation.
      */
-    public function restore(Reservation $reservation): RedirectResponse
+    public function restore(Reservation $reservation, AuditLogger $audit): RedirectResponse
     {
         $reservation->update(['active' => true]);
+
+        $audit->record(
+            module: 'reception',
+            action: 'reservation_restored',
+            subject: $reservation,
+            description: "Reservación #{$reservation->id} restaurada",
+            changes: ['active' => true, 'status' => $reservation->status],
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se restauró correctamente.']);
 

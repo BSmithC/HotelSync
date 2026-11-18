@@ -58,6 +58,20 @@ function inventoryMovementPayload(
     ];
 }
 
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function inventoryActivity(Hotel $hotel, array $attributes = []): AuditLog
+{
+    return AuditLog::create([
+        'hotel_id' => $hotel->id,
+        'module' => 'inventory',
+        'action' => 'item_created',
+        'description' => 'Actividad de prueba',
+        ...$attributes,
+    ]);
+}
+
 it('redirects guests to the login screen', function () {
     $this->get('/inventory')->assertRedirect('/login');
 });
@@ -338,4 +352,97 @@ it('does not expose inventory from another hotel', function () {
         ->assertNotFound();
 
     expect((float) $otherItem->fresh()->stock)->toBe(0.0);
+});
+
+it('shows system activity from every permitted module', function () {
+    $modules = [
+        'reception' => 'check_in',
+        'finance' => 'payment_registered',
+        'billing' => 'bill_created',
+        'services' => 'request_created',
+        'employees' => 'employee_created',
+        'inventory' => 'item_created',
+    ];
+
+    foreach ($modules as $module => $action) {
+        inventoryActivity($this->hotel, [
+            'user_id' => $this->user->id,
+            'module' => $module,
+            'action' => $action,
+            'description' => "Actividad de {$module}",
+        ]);
+    }
+
+    $this->actingAs($this->user)
+        ->get('/inventory?tab=movimientos&activity_scope=sistema')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Inventory/Index')
+            ->where('filters.activity_scope', 'sistema')
+            ->has('activity.data', 6)
+            ->has('options.activityModules', 6)
+            ->where('activity.data', function (iterable $rows) use ($modules): bool {
+                $seen = collect($rows)
+                    ->map(fn ($row): string => (string) $row['module'])
+                    ->all();
+                $expected = array_keys($modules);
+
+                sort($seen);
+                sort($expected);
+
+                return $seen === $expected;
+            }));
+});
+
+it('filters system activity by module', function () {
+    inventoryActivity($this->hotel, [
+        'module' => 'inventory',
+        'action' => 'item_created',
+        'description' => 'Artículo creado',
+    ]);
+    inventoryActivity($this->hotel, [
+        'module' => 'finance',
+        'action' => 'payment_registered',
+        'description' => 'Cobro registrado',
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('/inventory?tab=movimientos&activity_scope=sistema&activity_module=finance')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.activity_module', 'finance')
+            ->has('activity.data', 1)
+            ->where('activity.data.0.module', 'finance')
+            ->where('activity.data.0.actionLabel', 'Cobro registrado'));
+});
+
+it('limits system activity to modules the role can read', function () {
+    inventoryActivity($this->hotel, ['module' => 'inventory']);
+    inventoryActivity($this->hotel, ['module' => 'finance']);
+    inventoryActivity($this->hotel, ['module' => 'reception']);
+
+    $inventory = inventoryActor($this->hotel, 'inventario');
+
+    $this->actingAs($inventory)
+        ->get('/inventory?tab=movimientos&activity_scope=sistema&activity_module=finance')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.activity_module', '')
+            ->has('activity.data', 1)
+            ->where('activity.data.0.module', 'inventory')
+            ->has('options.activityModules', 1)
+            ->where('options.activityModules.0.value', 'inventory')
+            ->where('options.activityModules.0.label', 'Inventario'));
+});
+
+it('does not show system activity from another hotel', function () {
+    inventoryActivity($this->hotel, ['module' => 'inventory']);
+
+    $otherHotel = Hotel::factory()->create(['name' => 'Hotel Sur']);
+    inventoryActivity($otherHotel, ['module' => 'finance']);
+
+    $this->actingAs($this->user)
+        ->get('/inventory?tab=movimientos&activity_scope=sistema')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('activity.data', 1));
 });

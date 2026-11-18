@@ -52,6 +52,24 @@ export type InventoryItemOption = {
     unit_cost: string | number;
 };
 
+export type InventoryActivity = {
+    id: number;
+    module: string;
+    moduleLabel: string;
+    action: string;
+    actionLabel: string;
+    description: string;
+    actor: string;
+    createdAt: string | null;
+    subject: string | null;
+    tone: 'danger' | 'success' | 'info';
+};
+
+export type InventoryActivityModuleOption = {
+    value: string;
+    label: string;
+};
+
 export type InventoryAlert = {
     id: number;
     name: string;
@@ -85,6 +103,8 @@ export type InventoryFilters = {
     stock_state: string;
     movement_type: string;
     movement_state: string;
+    activity_scope: string;
+    activity_module: string;
     tab: InventoryTab;
 };
 
@@ -95,6 +115,8 @@ export type InventoryOptions = {
     stockStates: string[];
     movementTypes: string[];
     movementStates: string[];
+    activityScopes: string[];
+    activityModules: InventoryActivityModuleOption[];
 };
 
 export type InventoryPermissions = {
@@ -109,6 +131,7 @@ export type InventoryIndexProps = {
     kpis: InventoryKpis;
     items: Paginated<InventoryItem>;
     movements: Paginated<InventoryMovement>;
+    activity: Paginated<InventoryActivity>;
     alerts: InventoryAlert[];
     itemsForMovement: InventoryItemOption[];
     filters: InventoryFilters;

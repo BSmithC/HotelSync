@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\InventoryItem;
 use App\Models\InventoryMovement;
 use App\Services\InventoryService;
@@ -33,6 +34,68 @@ class InventoryController extends Controller
     private const MOVEMENT_STATES = ['vigente', 'anulado', 'reverso'];
 
     /**
+     * Scopes available inside the movements tab.
+     *
+     * @var list<string>
+     */
+    private const ACTIVITY_SCOPES = ['sistema', 'inventario'];
+
+    /**
+     * Human labels for every audited module.
+     *
+     * @var array<string, string>
+     */
+    private const ACTIVITY_MODULE_LABELS = [
+        'reception' => 'Gestión',
+        'finance' => 'Finanzas',
+        'billing' => 'Facturación',
+        'inventory' => 'Inventario',
+        'services' => 'Servicios',
+        'employees' => 'Empleados',
+    ];
+
+    /**
+     * Human labels for the audited actions shown in the activity feed.
+     *
+     * @var array<string, string>
+     */
+    private const ACTIVITY_ACTION_LABELS = [
+        'check_in' => 'Check-in',
+        'check_out' => 'Check-out',
+        'room_changed' => 'Cambio de habitación',
+        'room_status_changed' => 'Estado de habitación',
+        'incident_created' => 'Incidencia registrada',
+        'incident_updated' => 'Incidencia actualizada',
+        'reservation_created' => 'Reservación creada',
+        'reservation_updated' => 'Reservación actualizada',
+        'reservation_deactivated' => 'Reservación desactivada',
+        'reservation_restored' => 'Reservación restaurada',
+        'payment_registered' => 'Cobro registrado',
+        'payment_voided' => 'Cobro anulado',
+        'expense_registered' => 'Gasto registrado',
+        'expense_voided' => 'Gasto anulado',
+        'bill_voided' => 'Factura anulada',
+        'bill_created' => 'Factura creada',
+        'bill_updated' => 'Factura actualizada',
+        'bill_deactivated' => 'Factura desactivada',
+        'bill_restored' => 'Factura restaurada',
+        'item_created' => 'Artículo creado',
+        'item_updated' => 'Artículo actualizado',
+        'movement_registered' => 'Movimiento de inventario',
+        'movement_voided' => 'Movimiento de inventario anulado',
+        'service_created' => 'Servicio creado',
+        'service_updated' => 'Servicio actualizado',
+        'request_created' => 'Solicitud de servicio creada',
+        'request_status_changed' => 'Estado de solicitud',
+        'request_voided' => 'Solicitud anulada',
+        'request_billed' => 'Solicitud facturada',
+        'employee_created' => 'Empleado registrado',
+        'employee_updated' => 'Empleado actualizado',
+        'access_linked' => 'Acceso vinculado',
+        'access_revoked' => 'Acceso revocado',
+    ];
+
+    /**
      * Inventory operations center: catalog, stock balances and the movement
      * ledger, scoped to the current hotel and period.
      */
@@ -57,6 +120,9 @@ class InventoryController extends Controller
         $stockState = $this->filterValue($request, 'stock_state', self::STOCK_STATES);
         $movementType = $this->filterValue($request, 'movement_type', InventoryMovement::TYPES);
         $movementState = $this->filterValue($request, 'movement_state', self::MOVEMENT_STATES);
+        $activityScope = $this->filterValue($request, 'activity_scope', self::ACTIVITY_SCOPES) ?: 'sistema';
+        $visibleModules = $this->visibleActivityModules($request);
+        $activityModule = $this->filterValue($request, 'activity_module', $visibleModules);
 
         $items = $this->itemsQuery($search, $category, $state, $stockState)
             ->orderBy('name')
@@ -68,6 +134,11 @@ class InventoryController extends Controller
             ->latest('id')
             ->paginate(12, ['*'], 'movements_page')
             ->withQueryString();
+
+        $activity = $this->activityQuery($from, $to, $search, $activityModule, $visibleModules)
+            ->paginate(15, ['*'], 'activity_page')
+            ->withQueryString()
+            ->through(fn (AuditLog $log): array => $this->activityRow($log));
 
         $activeItems = InventoryItem::query()->where('active', true);
 
@@ -95,6 +166,7 @@ class InventoryController extends Controller
             ],
             'items' => $items,
             'movements' => $movements,
+            'activity' => $activity,
             'alerts' => InventoryItem::query()
                 ->where('active', true)
                 ->whereColumn('stock', '<=', 'min_stock')
@@ -115,6 +187,8 @@ class InventoryController extends Controller
                 'stock_state' => $stockState,
                 'movement_type' => $movementType,
                 'movement_state' => $movementState,
+                'activity_scope' => $activityScope,
+                'activity_module' => $activityModule,
                 'tab' => $tab,
             ],
             'options' => [
@@ -124,6 +198,14 @@ class InventoryController extends Controller
                 'stockStates' => self::STOCK_STATES,
                 'movementTypes' => InventoryMovement::TYPES,
                 'movementStates' => self::MOVEMENT_STATES,
+                'activityScopes' => self::ACTIVITY_SCOPES,
+                'activityModules' => array_map(
+                    fn (string $module): array => [
+                        'value' => $module,
+                        'label' => self::ACTIVITY_MODULE_LABELS[$module] ?? ucfirst($module),
+                    ],
+                    $visibleModules,
+                ),
             ],
             'permissions' => [
                 'manage' => $request->user()?->can(Permission::InventoryManage->value) ?? false,
@@ -337,6 +419,121 @@ class InventoryController extends Controller
                         });
                 });
             });
+    }
+
+    /**
+     * Modules the current user is allowed to read in the activity feed.
+     *
+     * @return list<string>
+     */
+    private function visibleActivityModules(Request $request): array
+    {
+        $user = $request->user();
+        $modules = [];
+
+        if ($user?->can(Permission::ReceptionView->value)) {
+            $modules[] = 'reception';
+        }
+
+        if ($user?->can(Permission::FinanceView->value)) {
+            $modules[] = 'finance';
+            $modules[] = 'billing';
+        }
+
+        if ($user?->can(Permission::InventoryView->value)) {
+            $modules[] = 'inventory';
+        }
+
+        if ($user?->can(Permission::ServicesView->value)) {
+            $modules[] = 'services';
+        }
+
+        if ($user?->can(Permission::EmployeesView->value)) {
+            $modules[] = 'employees';
+        }
+
+        return $modules;
+    }
+
+    /**
+     * Hotel-wide activity recorded by every module in the audit trail.
+     *
+     * @param  list<string>  $modules
+     * @return Builder<AuditLog>
+     */
+    private function activityQuery(
+        CarbonImmutable $from,
+        CarbonImmutable $to,
+        string $search,
+        string $module,
+        array $modules,
+    ): Builder {
+        return AuditLog::query()
+            ->with('user:id,name')
+            ->whereIn('module', $modules)
+            ->whereDate('created_at', '>=', $from->toDateString())
+            ->whereDate('created_at', '<=', $to->toDateString())
+            ->when(
+                $module !== '',
+                fn (Builder $query) => $query->where('module', $module),
+            )
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $query) use ($search): void {
+                    $query->where('description', 'like', "%{$search}%")
+                        ->orWhere('action', 'like', "%{$search}%")
+                        ->orWhereHas('user', function (Builder $user) use ($search): void {
+                            $user->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->latest('created_at')
+            ->latest('id');
+    }
+
+    /**
+     * Normalize one audit record for the activity table.
+     *
+     * @return array<string, mixed>
+     */
+    private function activityRow(AuditLog $log): array
+    {
+        return [
+            'id' => $log->id,
+            'module' => $log->module,
+            'moduleLabel' => self::ACTIVITY_MODULE_LABELS[$log->module] ?? ucfirst($log->module),
+            'action' => $log->action,
+            'actionLabel' => self::ACTIVITY_ACTION_LABELS[$log->action] ?? $log->action,
+            'description' => $log->description ?? 'Sin detalle',
+            'actor' => $log->actorName(),
+            'createdAt' => $log->created_at?->toIso8601String(),
+            'subject' => $log->subject_id === null ? null : '#'.$log->subject_id,
+            'tone' => $this->activityTone($log->action),
+        ];
+    }
+
+    private function activityTone(string $action): string
+    {
+        if (
+            str_contains($action, 'void')
+            || str_contains($action, 'deactivated')
+            || str_contains($action, 'cancelled')
+            || str_contains($action, 'revoked')
+        ) {
+            return 'danger';
+        }
+
+        if (
+            str_contains($action, 'created')
+            || str_contains($action, 'registered')
+            || str_contains($action, 'check_in')
+            || str_contains($action, 'billed')
+            || str_contains($action, 'restored')
+            || str_contains($action, 'linked')
+        ) {
+            return 'success';
+        }
+
+        return 'info';
     }
 
     private function normalizeSku(Request $request): void
