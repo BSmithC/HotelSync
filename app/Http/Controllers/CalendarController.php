@@ -6,6 +6,8 @@ use App\Models\Calendar;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Support\CurrentHotel;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -44,17 +46,113 @@ class CalendarController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Display the calendar grid or the paginated list of events.
+     *
+     * The month grid is calculated in the hotel timezone and covers the whole
+     * weeks that contain the selected month, so the first and last rows are
+     * not empty. Event dates are resolved to the hotel timezone as well.
      */
     public function index(Request $request): Response
     {
+        $timezone = app(CurrentHotel::class)->model()?->timezone
+            ?? config('app.timezone');
+
+        $today = CarbonImmutable::now($timezone);
+        $monthStart = $this->resolveMonth($request, $today);
+        $gridStart = $monthStart->startOfWeek(CarbonImmutable::MONDAY);
+        $gridEnd = $monthStart->endOfMonth()->endOfWeek(CarbonImmutable::SUNDAY);
+
         $query = Calendar::with(['room', 'reservation.client']);
 
+        $this->applyFilters($query, $request);
+
+        $events = (clone $query)
+            ->orderBy('starts_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $rangeStart = $gridStart->utc();
+        $rangeEnd = $gridEnd->endOfDay()->utc();
+
+        $monthEvents = (clone $query)
+            ->where('starts_at', '<=', $rangeEnd)
+            ->where(function (Builder $range) use ($rangeStart) {
+                $range->where('ends_at', '>=', $rangeStart)
+                    ->orWhere(function (Builder $openEnded) use ($rangeStart) {
+                        $openEnded->whereNull('ends_at')
+                            ->where('starts_at', '>=', $rangeStart);
+                    });
+            })
+            ->orderBy('starts_at')
+            ->get()
+            ->map(function (Calendar $event) use ($timezone) {
+                $start = $event->starts_at->copy()->setTimezone($timezone);
+                $end = $event->ends_at?->copy()->setTimezone($timezone);
+
+                return [
+                    ...$event->toArray(),
+                    'starts_at' => $event->starts_at->toIso8601String(),
+                    'ends_at' => $event->ends_at?->toIso8601String(),
+                    'starts_on' => $start->toDateString(),
+                    'ends_on' => $end?->toDateString() ?? $start->toDateString(),
+                    'start_time' => $start->format('H:i'),
+                    'end_time' => $end?->format('H:i'),
+                ];
+            })
+            ->values();
+
+        $view = $request->string('view')->toString() === 'lista'
+            ? 'lista'
+            : 'calendario';
+
+        return Inertia::render('Calendar/Index', [
+            'events' => $events,
+            'monthEvents' => $monthEvents,
+            'view' => $view,
+            'calendar' => [
+                'month' => $monthStart->format('Y-m'),
+                'label' => ucfirst($monthStart->locale('es')->translatedFormat('F Y')),
+                'grid_start' => $gridStart->toDateString(),
+                'grid_end' => $gridEnd->toDateString(),
+                'today' => $today->toDateString(),
+                'previous' => $monthStart->subMonthNoOverflow()->format('Y-m'),
+                'next' => $monthStart->addMonthNoOverflow()->format('Y-m'),
+                'timezone' => $timezone,
+            ],
+            'filters' => $request->only(['search', 'status', 'type']),
+        ]);
+    }
+
+    /**
+     * Resolve the requested month, ignoring malformed values.
+     */
+    private function resolveMonth(Request $request, CarbonImmutable $today): CarbonImmutable
+    {
+        $month = $request->string('month')->toString();
+
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
+            return $today->startOfMonth();
+        }
+
+        return CarbonImmutable::createFromFormat(
+            '!Y-m-d',
+            $month.'-01',
+            $today->getTimezone(),
+        )->startOfMonth();
+    }
+
+    /**
+     * Apply the shared search and state filters to the event query.
+     */
+    private function applyFilters(Builder $query, Request $request): void
+    {
         if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('title', 'like', "%{$request->search}%")
-                    ->orWhere('type', 'like', "%{$request->search}%")
-                    ->orWhere('description', 'like', "%{$request->search}%");
+            $search = $request->string('search')->toString();
+
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -67,11 +165,6 @@ class CalendarController extends Controller
         if (in_array($type, self::TYPES, true)) {
             $query->where('type', $type);
         }
-
-        return Inertia::render('Calendar/Index', [
-            'events' => $query->orderBy('starts_at')->paginate(10)->withQueryString(),
-            'filters' => $request->only(['search', 'status', 'type']),
-        ]);
     }
 
     /**

@@ -1,5 +1,5 @@
-import { Head, useForm, Link } from '@inertiajs/react';
-import React from 'react';
+import { Head, useForm, usePage, Link } from '@inertiajs/react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,36 @@ interface ReservationOption {
 
 const types = ['evento', 'bloqueo', 'mantenimiento'];
 
+/**
+ * The day grid links here with a `starts_at` query parameter so a click on a
+ * day pre-fills the event start and a one-hour end.
+ */
+function usePrefilledStart() {
+    const { url } = usePage();
+
+    return useMemo(() => {
+        const params = new URLSearchParams(url.split('?')[1] ?? '');
+        const value = params.get('starts_at') ?? '';
+
+        return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) ? value : '';
+    }, [url]);
+}
+
+function addOneHour(value: string) {
+    if (value === '') {
+        return '';
+    }
+
+    const date = new Date(value);
+    date.setHours(date.getHours() + 1);
+
+    const pad = (part: number) => String(part).padStart(2, '0');
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+        date.getDate(),
+    )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export default function Create({
     rooms,
     reservations,
@@ -35,13 +65,15 @@ export default function Create({
     rooms: Option[];
     reservations: ReservationOption[];
 }) {
+    const prefilledStart = usePrefilledStart();
+
     const { data, setData, post, processing, errors, transform } = useForm({
         title: '',
         type: 'evento',
         room_id: 'none',
         reservation_id: 'none',
-        starts_at: '',
-        ends_at: '',
+        starts_at: prefilledStart,
+        ends_at: addOneHour(prefilledStart),
         description: '',
     });
 

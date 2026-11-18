@@ -41,11 +41,17 @@ export function ListFilters({
     search,
     searchPlaceholder = 'Buscar…',
     selects = [],
+    extraParams = {},
 }: {
     url: string;
     search?: string | null;
     searchPlaceholder?: string;
     selects?: ListFilterSelect[];
+    /**
+     * Parameters that are not part of the filter form (for example the
+     * calendar month or view) but must survive every filter request.
+     */
+    extraParams?: Record<string, string>;
 }) {
     const [values, setValues] = useState<FilterValues>(() => ({
         search: search ?? '',
@@ -67,7 +73,7 @@ export function ListFilters({
 
     const commit = useCallback(
         (next: FilterValues) => {
-            const params: Record<string, string> = {};
+            const params: Record<string, string> = { ...extraParams };
 
             Object.entries(next).forEach(([key, value]) => {
                 if (value !== '') {
@@ -81,7 +87,7 @@ export function ListFilters({
                 replace: true,
             });
         },
-        [url],
+        [url, extraParams],
     );
 
     // Debounce free-text search so typing does not trigger a request per key.
