@@ -1,6 +1,7 @@
 import { AppUserMenu } from '@/components/app-user-menu';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { GlobalSearch } from '@/components/global-search';
+import { HotelMenu } from '@/components/hotel-menu';
 import { NotificationsMenu } from '@/components/notifications-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Separator } from '@/components/ui/separator';
@@ -26,6 +27,7 @@ export function AppNavbar({
             </div>
 
             <div className="ml-auto flex items-center gap-0.5">
+                <HotelMenu />
                 <GlobalSearch />
                 <ThemeToggle />
                 <NotificationsMenu />
