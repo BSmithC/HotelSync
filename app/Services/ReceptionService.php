@@ -233,6 +233,11 @@ class ReceptionService
             }
 
             $previous = $room->status;
+
+            if ($previous === $status) {
+                return $room;
+            }
+
             $this->setRoomStatus($room, $status, $user, $occupiedBy?->id, $reason);
 
             $this->audit->record(
