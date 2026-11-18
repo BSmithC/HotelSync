@@ -13,6 +13,7 @@ import AppLogo from '@/components/app-logo';
 import { HotelSwitcher } from '@/components/hotel-switcher';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
+import type { NavGroup } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
@@ -24,57 +25,69 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const navGroups: NavGroup[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
+        label: 'Operación',
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Reservaciones',
+                href: '/reservations',
+                icon: CalendarCheck,
+            },
+            {
+                title: 'Calendario',
+                href: '/calendars',
+                icon: CalendarDays,
+            },
+        ],
     },
     {
-        title: 'Clientes',
-        href: '/clients',
-        icon: User,
+        label: 'Gestión',
+        items: [
+            {
+                title: 'Clientes',
+                href: '/clients',
+                icon: User,
+            },
+            {
+                title: 'Habitaciones',
+                href: '/rooms',
+                icon: HousePlug,
+            },
+            {
+                title: 'Facturas',
+                href: '/bills',
+                icon: Receipt,
+            },
+        ],
     },
     {
-        title: 'Reservaciones',
-        href: '/reservations',
-        icon: CalendarCheck,
-    },
-    {
-        title: 'Habitaciones',
-        href: '/rooms',
-        icon: HousePlug,
-    },
-    {
-        title: 'Calendario',
-        href: '/calendars',
-        icon: CalendarDays,
-    },
-    {
-        title: 'Facturas',
-        href: '/bills',
-        icon: Receipt,
-    },
-    {
-        title: 'Sucursales',
-        href: '/branches',
-        icon: Building2,
-    },
-    {
-        title: 'Edificios',
-        href: '/buildings',
-        icon: Building,
+        label: 'Estructura',
+        items: [
+            {
+                title: 'Sucursales',
+                href: '/branches',
+                icon: Building2,
+            },
+            {
+                title: 'Edificios',
+                href: '/buildings',
+                icon: Building,
+            },
+        ],
     },
 ];
-
-const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+            <SidebarHeader className="gap-3 border-b border-sidebar-border/60 pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
@@ -87,12 +100,12 @@ export function AppSidebar() {
                 <HotelSwitcher />
             </SidebarHeader>
 
-            <SidebarContent>
-                <NavMain items={mainNavItems} />
+            <SidebarContent className="gap-1 pt-2">
+                <NavMain groups={navGroups} />
             </SidebarContent>
 
-            <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+            <SidebarFooter className="gap-2 border-t border-sidebar-border/60 pt-2">
+                <NavFooter items={[]} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
