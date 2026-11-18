@@ -23,6 +23,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Acciones explícitas de restauración (no dependen de enviar "active" en un update).
     Route::patch('clients/{client}/restore', [ClientController::class, 'restore'])->name('clients.restore');
     Route::patch('branches/{branch}/restore', [BranchController::class, 'restore'])->name('branches.restore');
+    Route::patch('reservations/{reservation}/restore', [ReservationController::class, 'restore'])->name('reservations.restore');
+    Route::patch('calendars/{calendar}/restore', [CalendarController::class, 'restore'])->name('calendars.restore');
+    Route::patch('buildings/{building}/restore', [BuildingController::class, 'restore'])->name('buildings.restore');
+    Route::patch('bills/{bill}/restore', [BillController::class, 'restore'])->name('bills.restore');
 
     // Las áreas son necesarias para crear habitaciones y no tienen CRUD completo todavía.
     Route::post('areas', [AreaController::class, 'store'])->name('areas.store');

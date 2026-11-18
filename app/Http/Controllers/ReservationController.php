@@ -2,19 +2,66 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
+use App\Models\Reservation;
+use App\Models\Room;
+use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ReservationController extends Controller
 {
     /**
+     * Validation rules shared by store and update.
+     *
+     * The client and the room must belong to the current hotel.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'client_id' => ['required', Rule::exists('clients', 'id')->where('hotel_id', $hotelId)],
+            'room_id' => ['required', Rule::exists('rooms', 'id')->where('hotel_id', $hotelId)],
+            'reserved_at' => ['required', 'date'],
+            'finished_at' => ['nullable', 'date', 'after_or_equal:reserved_at'],
+            'guests' => ['required', 'integer', 'min:1'],
+            'status' => ['required', 'string', 'max:50'],
+            'notes' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return $this->comingSoon();
+        $query = Reservation::with(['client', 'room']);
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('status', 'like', "%{$request->search}%")
+                    ->orWhereHas('client', function ($client) use ($request) {
+                        $client->where('first_name', 'like', "%{$request->search}%")
+                            ->orWhere('last_name', 'like', "%{$request->search}%");
+                    })
+                    ->orWhereHas('room', fn ($room) => $room->where('name', 'like', "%{$request->search}%"));
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('active', $request->boolean('status'));
+        }
+
+        return Inertia::render('Reservations/Index', [
+            'reservations' => $query->latest('id')->get(),
+            'filters' => $request->only(['search', 'status']),
+        ]);
     }
 
     /**
@@ -22,7 +69,10 @@ class ReservationController extends Controller
      */
     public function create(): Response
     {
-        return $this->comingSoon();
+        return Inertia::render('Reservations/Create', [
+            'clients' => Client::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'rooms' => Room::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**
@@ -30,7 +80,16 @@ class ReservationController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        return back();
+        $validated = $request->validate($this->rules());
+
+        Reservation::create([
+            ...$validated,
+            'user_id' => $request->user()->id,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se registró correctamente.']);
+
+        return to_route('reservations.index');
     }
 
     /**
@@ -38,7 +97,9 @@ class ReservationController extends Controller
      */
     public function show(string $id): Response
     {
-        return $this->comingSoon();
+        $reservation = Reservation::with(['client', 'room', 'user'])->findOrFail($id);
+
+        return Inertia::render('Reservations/Show', compact('reservation'));
     }
 
     /**
@@ -46,7 +107,13 @@ class ReservationController extends Controller
      */
     public function edit(string $id): Response
     {
-        return $this->comingSoon();
+        $reservation = Reservation::findOrFail($id);
+
+        return Inertia::render('Reservations/Edit', [
+            'reservation' => $reservation,
+            'clients' => Client::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'rooms' => Room::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**
@@ -54,22 +121,38 @@ class ReservationController extends Controller
      */
     public function update(Request $request, string $id): RedirectResponse
     {
-        return back();
+        $reservation = Reservation::findOrFail($id);
+
+        $reservation->update($request->validate($this->rules()));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se actualizó correctamente.']);
+
+        return to_route('reservations.index');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deactivate the specified resource.
      */
     public function destroy(string $id): RedirectResponse
     {
-        return back();
+        $reservation = Reservation::findOrFail($id);
+
+        $reservation->update(['active' => false]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se desactivó correctamente.']);
+
+        return to_route('reservations.index');
     }
 
-    private function comingSoon(): Response
+    /**
+     * Restore a previously deactivated reservation.
+     */
+    public function restore(Reservation $reservation): RedirectResponse
     {
-        return Inertia::render('coming-soon', [
-            'title' => 'Reservaciones',
-            'description' => 'Las reservas, la disponibilidad y el check-in/check-out se habilitarán en el próximo sprint.',
-        ]);
+        $reservation->update(['active' => true]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La reservación se restauró correctamente.']);
+
+        return to_route('reservations.index');
     }
 }

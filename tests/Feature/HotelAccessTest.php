@@ -127,10 +127,8 @@ it('deactivates and restores a branch through explicit actions', function () {
 it('shows a friendly placeholder for modules that are not implemented yet', function () {
     $user = User::factory()->create();
 
-    foreach (['/reservations', '/calendars', '/buildings', '/bills', '/beds'] as $uri) {
-        $this->actingAs($user)
-            ->get($uri)
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('coming-soon'));
-    }
+    $this->actingAs($user)
+        ->get('/beds')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('coming-soon'));
 });

@@ -1,5 +1,14 @@
 import { Link } from '@inertiajs/react';
-import { Building2, HousePlug, LayoutGrid, User } from 'lucide-react';
+import {
+    Building,
+    Building2,
+    CalendarCheck,
+    CalendarDays,
+    HousePlug,
+    LayoutGrid,
+    Receipt,
+    User,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { HotelSwitcher } from '@/components/hotel-switcher';
 import { NavFooter } from '@/components/nav-footer';
@@ -29,14 +38,34 @@ const mainNavItems: NavItem[] = [
         icon: User,
     },
     {
+        title: 'Reservaciones',
+        href: '/reservations',
+        icon: CalendarCheck,
+    },
+    {
         title: 'Habitaciones',
         href: '/rooms',
         icon: HousePlug,
     },
     {
+        title: 'Calendario',
+        href: '/calendars',
+        icon: CalendarDays,
+    },
+    {
+        title: 'Facturas',
+        href: '/bills',
+        icon: Receipt,
+    },
+    {
         title: 'Sucursales',
         href: '/branches',
         icon: Building2,
+    },
+    {
+        title: 'Edificios',
+        href: '/buildings',
+        icon: Building,
     },
 ];
 

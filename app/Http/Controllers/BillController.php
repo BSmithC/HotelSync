@@ -2,27 +2,88 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bill;
+use App\Models\Client;
+use App\Models\Reservation;
+use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BillController extends Controller
 {
     /**
+     * Validation rules shared by store and update.
+     *
+     * The client and the reservation must belong to the current hotel, and
+     * the invoice number is unique per hotel.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(?Bill $bill = null): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'client_id' => ['required', Rule::exists('clients', 'id')->where('hotel_id', $hotelId)],
+            'reservation_id' => ['nullable', Rule::exists('reservations', 'id')->where('hotel_id', $hotelId)],
+            'number' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('bills', 'number')->where('hotel_id', $hotelId)->ignore($bill?->id),
+            ],
+            'issued_at' => ['required', 'date'],
+            'subtotal' => ['required', 'numeric', 'min:0'],
+            'tax' => ['nullable', 'numeric', 'min:0'],
+            'status' => ['required', 'string', 'max:50'],
+            'notes' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return $this->comingSoon();
+        $query = Bill::with(['client', 'reservation']);
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('number', 'like', "%{$request->search}%")
+                    ->orWhere('status', 'like', "%{$request->search}%")
+                    ->orWhereHas('client', function ($client) use ($request) {
+                        $client->where('first_name', 'like', "%{$request->search}%")
+                            ->orWhere('last_name', 'like', "%{$request->search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('active', $request->boolean('status'));
+        }
+
+        return Inertia::render('Bills/Index', [
+            'bills' => $query->latest('id')->get(),
+            'filters' => $request->only(['search', 'status']),
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return $this->comingSoon();
+        return Inertia::render('Bills/Create', [
+            'clients' => Client::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'reservations' => Reservation::with('client')->latest('id')->get(['id', 'client_id', 'reserved_at']),
+            'defaults' => [
+                'client_id' => $request->integer('client_id') ?: null,
+                'reservation_id' => $request->integer('reservation_id') ?: null,
+            ],
+        ]);
     }
 
     /**
@@ -30,7 +91,16 @@ class BillController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        return back();
+        $validated = $request->validate($this->rules());
+
+        $validated['tax'] ??= 0;
+        $validated['total'] = round($validated['subtotal'] + $validated['tax'], 2);
+
+        Bill::create($validated);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se registró correctamente.']);
+
+        return to_route('bills.index');
     }
 
     /**
@@ -38,7 +108,9 @@ class BillController extends Controller
      */
     public function show(string $id): Response
     {
-        return $this->comingSoon();
+        $bill = Bill::with(['client', 'reservation', 'details'])->findOrFail($id);
+
+        return Inertia::render('Bills/Show', compact('bill'));
     }
 
     /**
@@ -46,7 +118,13 @@ class BillController extends Controller
      */
     public function edit(string $id): Response
     {
-        return $this->comingSoon();
+        $bill = Bill::findOrFail($id);
+
+        return Inertia::render('Bills/Edit', [
+            'bill' => $bill,
+            'clients' => Client::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'reservations' => Reservation::with('client')->latest('id')->get(['id', 'client_id', 'reserved_at']),
+        ]);
     }
 
     /**
@@ -54,22 +132,43 @@ class BillController extends Controller
      */
     public function update(Request $request, string $id): RedirectResponse
     {
-        return back();
+        $bill = Bill::findOrFail($id);
+
+        $validated = $request->validate($this->rules($bill));
+
+        $validated['tax'] ??= 0;
+        $validated['total'] = round($validated['subtotal'] + $validated['tax'], 2);
+
+        $bill->update($validated);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se actualizó correctamente.']);
+
+        return to_route('bills.index');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deactivate the specified resource.
      */
     public function destroy(string $id): RedirectResponse
     {
-        return back();
+        $bill = Bill::findOrFail($id);
+
+        $bill->update(['active' => false]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se desactivó correctamente.']);
+
+        return to_route('bills.index');
     }
 
-    private function comingSoon(): Response
+    /**
+     * Restore a previously deactivated bill.
+     */
+    public function restore(Bill $bill): RedirectResponse
     {
-        return Inertia::render('coming-soon', [
-            'title' => 'Facturación',
-            'description' => 'La facturación, los pagos y las notas de crédito se habilitarán en la fase financiera.',
-        ]);
+        $bill->update(['active' => true]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'La factura se restauró correctamente.']);
+
+        return to_route('bills.index');
     }
 }

@@ -2,19 +2,60 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
+use App\Models\Building;
+use App\Support\CurrentHotel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BuildingController extends Controller
 {
     /**
+     * Validation rules shared by store and update.
+     *
+     * The branch must belong to the current hotel.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        $hotelId = app(CurrentHotel::class)->id();
+
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'branch_id' => ['nullable', Rule::exists('branches', 'id')->where('hotel_id', $hotelId)],
+            'address' => ['nullable', 'string', 'max:255'],
+            'floors' => ['required', 'integer', 'min:1'],
+            'description' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return $this->comingSoon();
+        $query = Building::with('branch');
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('address', 'like', "%{$request->search}%")
+                    ->orWhere('description', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('active', $request->boolean('status'));
+        }
+
+        return Inertia::render('Buildings/Index', [
+            'buildings' => $query->latest('id')->get(),
+            'filters' => $request->only(['search', 'status']),
+        ]);
     }
 
     /**
@@ -22,7 +63,9 @@ class BuildingController extends Controller
      */
     public function create(): Response
     {
-        return $this->comingSoon();
+        return Inertia::render('Buildings/Create', [
+            'branches' => Branch::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**
@@ -30,7 +73,13 @@ class BuildingController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        return back();
+        $validated = $request->validate($this->rules());
+
+        Building::create($validated);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'El edificio se registró correctamente.']);
+
+        return to_route('buildings.index');
     }
 
     /**
@@ -38,7 +87,9 @@ class BuildingController extends Controller
      */
     public function show(string $id): Response
     {
-        return $this->comingSoon();
+        $building = Building::with('branch')->findOrFail($id);
+
+        return Inertia::render('Buildings/Show', compact('building'));
     }
 
     /**
@@ -46,7 +97,12 @@ class BuildingController extends Controller
      */
     public function edit(string $id): Response
     {
-        return $this->comingSoon();
+        $building = Building::findOrFail($id);
+
+        return Inertia::render('Buildings/Edit', [
+            'building' => $building,
+            'branches' => Branch::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**
@@ -54,22 +110,38 @@ class BuildingController extends Controller
      */
     public function update(Request $request, string $id): RedirectResponse
     {
-        return back();
+        $building = Building::findOrFail($id);
+
+        $building->update($request->validate($this->rules()));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'El edificio se actualizó correctamente.']);
+
+        return to_route('buildings.index');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Deactivate the specified resource.
      */
     public function destroy(string $id): RedirectResponse
     {
-        return back();
+        $building = Building::findOrFail($id);
+
+        $building->update(['active' => false]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'El edificio se desactivó correctamente.']);
+
+        return to_route('buildings.index');
     }
 
-    private function comingSoon(): Response
+    /**
+     * Restore a previously deactivated building.
+     */
+    public function restore(Building $building): RedirectResponse
     {
-        return Inertia::render('coming-soon', [
-            'title' => 'Edificios',
-            'description' => 'La administración de edificios y sucursales se habilitará en el módulo de inventario hotelero.',
-        ]);
+        $building->update(['active' => true]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'El edificio se restauró correctamente.']);
+
+        return to_route('buildings.index');
     }
 }

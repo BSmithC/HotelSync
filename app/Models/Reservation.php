@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Reservation extends Model
 {
@@ -48,5 +49,15 @@ class Reservation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class);
+    }
+
+    public function calendarEvents(): HasMany
+    {
+        return $this->hasMany(Calendar::class);
     }
 }
