@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     BedDouble,
     Building,
@@ -16,6 +16,7 @@ import {
     Users,
     Wallet,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import AppLogo from '@/components/app-logo';
 import { HotelSwitcher } from '@/components/hotel-switcher';
 import { NavMain } from '@/components/nav-main';
@@ -29,6 +30,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { edit as editProfile } from '@/routes/profile';
@@ -153,6 +155,18 @@ const navGroups: NavGroup[] = [
 ];
 
 export function AppSidebar() {
+    const { url } = usePage();
+    const { isMobile, setOpenMobile } = useSidebar();
+
+    // The mobile drawer lives outside the Inertia page, so it would stay open
+    // over the new screen after tapping a link. Close it whenever the URL
+    // changes.
+    useEffect(() => {
+        if (isMobile) {
+            setOpenMobile(false);
+        }
+    }, [url, isMobile, setOpenMobile]);
+
     return (
         <Sidebar
             collapsible="icon"
