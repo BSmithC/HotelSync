@@ -9,6 +9,7 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HotelSwitchController;
+use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Las áreas son necesarias para crear habitaciones y no tienen CRUD completo todavía.
     Route::post('areas', [AreaController::class, 'store'])->name('areas.store');
+
+    // Centro de operaciones de recepción.
+    Route::prefix('reception')->name('reception.')->group(function () {
+        Route::get('/', [ReceptionController::class, 'index'])->name('index');
+        Route::get('guests/{client}', [ReceptionController::class, 'guest'])->name('guests.show');
+        Route::post('reservations/{reservation}/check-in', [ReceptionController::class, 'checkIn'])->name('check-in');
+        Route::post('reservations/{reservation}/check-out', [ReceptionController::class, 'checkOut'])->name('check-out');
+        Route::patch('reservations/{reservation}/room', [ReceptionController::class, 'changeRoom'])->name('room');
+        Route::post('incidents', [ReceptionController::class, 'storeIncident'])->name('incidents.store');
+        Route::patch('incidents/{incident}', [ReceptionController::class, 'updateIncident'])->name('incidents.update');
+        Route::patch('rooms/{room}/status', [ReceptionController::class, 'updateRoomStatus'])->name('rooms.status');
+    });
 
     Route::resources([
         'clients' => ClientController::class,

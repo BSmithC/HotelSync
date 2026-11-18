@@ -54,6 +54,12 @@ const navGroups: NavGroup[] = [
                 href: '/calendars',
                 icon: CalendarDays,
             },
+            {
+                title: 'Recepción',
+                href: '/reception',
+                icon: ConciergeBell,
+                permission: 'reception.view',
+            },
         ],
     },
     {
@@ -99,13 +105,6 @@ const navGroups: NavGroup[] = [
     {
         label: 'Próximamente',
         items: [
-            {
-                title: 'Recepción',
-                href: '/reservations',
-                icon: ConciergeBell,
-                disabled: true,
-                badge: comingSoon,
-            },
             {
                 title: 'Finanzas',
                 href: '/bills',
