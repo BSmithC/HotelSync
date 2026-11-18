@@ -81,6 +81,12 @@ const navGroups: NavGroup[] = [
                 icon: Package,
                 permission: 'inventory.view',
             },
+            {
+                title: 'Servicios',
+                href: '/services',
+                icon: Sparkles,
+                permission: 'services.view',
+            },
         ],
     },
     {
@@ -117,13 +123,6 @@ const navGroups: NavGroup[] = [
     {
         label: 'Próximamente',
         items: [
-            {
-                title: 'Servicios',
-                href: '/rooms',
-                icon: Sparkles,
-                disabled: true,
-                badge: comingSoon,
-            },
             {
                 title: 'Empleados',
                 href: '/settings/profile',

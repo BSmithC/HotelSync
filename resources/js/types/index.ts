@@ -7,4 +7,5 @@ export type * from './navigation';
 export type * from './permission';
 export type * from './reception';
 export type * from './room';
+export type * from './services';
 export type * from './ui';

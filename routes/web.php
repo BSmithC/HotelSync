@@ -14,6 +14,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ReceptionController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\ServicesController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -65,6 +66,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('items/{item}', [InventoryController::class, 'updateItem'])->name('items.update');
         Route::post('items/{item}/movements', [InventoryController::class, 'storeMovement'])->name('movements.store');
         Route::post('movements/{movement}/void', [InventoryController::class, 'voidMovement'])->name('movements.void');
+    });
+
+    // Centro de servicios: catálogo, solicitudes y facturación de líneas.
+    Route::prefix('services')->name('services.')->group(function () {
+        Route::get('/', [ServicesController::class, 'index'])->name('index');
+        Route::post('catalog', [ServicesController::class, 'storeService'])->name('catalog.store');
+        Route::patch('catalog/{service}', [ServicesController::class, 'updateService'])->name('catalog.update');
+        Route::post('requests', [ServicesController::class, 'storeRequest'])->name('requests.store');
+        Route::post('requests/{serviceRequest}/status', [ServicesController::class, 'changeRequestStatus'])->name('requests.status');
+        Route::post('requests/{serviceRequest}/void', [ServicesController::class, 'voidRequest'])->name('requests.void');
+        Route::post('requests/{serviceRequest}/bill', [ServicesController::class, 'billRequest'])->name('requests.bill');
     });
 
     Route::resources([
