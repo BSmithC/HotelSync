@@ -17,6 +17,12 @@ class Room extends Model
         'height',
         'rotation',
         'active',
+
+        //detalles
+        'description',
+        'price',
+        'phone',
+        'status'
     ];
 
     public function client()

@@ -20,11 +20,21 @@ class RoomController extends Controller
             $query->where('active', $request->status);
         }
 
+        $areas = Area::all();
+        // Si hay un area_id en el request, la seleccionamos, si no, tomamos la primera
+        $currentArea = $request->filled('area_id')
+            ? $areas->firstWhere('id', $request->area_id)
+            : $areas->first();
+
+        // Filtramos las habitaciones por el área seleccionada
+        $rooms = $currentArea ? Room::where('area_id', $currentArea->id)->get() : [];
+
         $rooms = Room::all();
 
         return Inertia::render('Rooms/Index', [
-            'area' => Area::all(),
-            'room' => $rooms,
+            'areas' => $areas,
+            'currentArea' => $currentArea,
+            'rooms' => $rooms,
         ]);
     }
 
