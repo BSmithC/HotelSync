@@ -66,7 +66,7 @@ class InventoryService
     public function updateItem(InventoryItem $item, array $data, User $user): InventoryItem
     {
         return DB::transaction(function () use ($item, $data): InventoryItem {
-            $item = InventoryItem::query()->lockForUpdate()->findOrFail($item->getKey());
+            $item = InventoryItem::query()->lockForUpdate()->findOrFail((int) $item->getKey());
 
             // Capture the previous state before save(), because getOriginal()
             // returns the new values once the model has been persisted.
@@ -124,7 +124,7 @@ class InventoryService
     public function registerMovement(InventoryItem $item, array $data, User $user): InventoryMovement
     {
         return DB::transaction(function () use ($item, $data, $user): InventoryMovement {
-            $item = InventoryItem::query()->lockForUpdate()->findOrFail($item->getKey());
+            $item = InventoryItem::query()->lockForUpdate()->findOrFail((int) $item->getKey());
 
             if (! $item->active) {
                 throw ValidationException::withMessages([
@@ -233,7 +233,7 @@ class InventoryService
     public function voidMovement(InventoryMovement $movement, User $user, string $reason): InventoryMovement
     {
         return DB::transaction(function () use ($movement, $user, $reason): InventoryMovement {
-            $movement = InventoryMovement::query()->lockForUpdate()->findOrFail($movement->getKey());
+            $movement = InventoryMovement::query()->lockForUpdate()->findOrFail((int) $movement->getKey());
 
             if ($movement->voided_at !== null) {
                 throw ValidationException::withMessages([
@@ -353,7 +353,6 @@ class InventoryService
 
     private function timezone(): string
     {
-        return app(CurrentHotel::class)->model()?->timezone
-            ?? config('app.timezone');
+        return app(CurrentHotel::class)->timezone();
     }
 }

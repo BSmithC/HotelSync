@@ -38,6 +38,26 @@ class CurrentHotel
         return $hotelId === null ? null : Hotel::find($hotelId);
     }
 
+    /**
+     * Timezone configured for the hotel of the current request.
+     */
+    public function timezone(): string
+    {
+        $hotel = $this->model();
+
+        return $hotel === null ? (string) config('app.timezone') : $hotel->timezone;
+    }
+
+    /**
+     * Currency configured for the hotel of the current request.
+     */
+    public function currency(): string
+    {
+        $hotel = $this->model();
+
+        return $hotel === null ? 'DOP' : $hotel->currency;
+    }
+
     public function set(?int $hotelId): void
     {
         $this->hotelId = $hotelId;

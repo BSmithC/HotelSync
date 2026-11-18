@@ -41,8 +41,8 @@ class InventoryController extends Controller
         $this->authorize(Permission::InventoryView->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
-        $currency = $hotel?->currency ?? 'DOP';
+        $timezone = app(CurrentHotel::class)->timezone();
+        $currency = app(CurrentHotel::class)->currency();
 
         [$from, $to] = $this->resolvePeriod($request, $timezone);
 
@@ -378,7 +378,7 @@ class InventoryController extends Controller
 
         $date = CarbonImmutable::createFromFormat('!Y-m-d', $value, $timezone);
 
-        return $date === false ? null : $date->startOfDay();
+        return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
     /**

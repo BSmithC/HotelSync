@@ -32,8 +32,8 @@ class DashboardController extends Controller
     public function __invoke(): Response
     {
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
-        $currency = $hotel?->currency ?? 'DOP';
+        $timezone = app(CurrentHotel::class)->timezone();
+        $currency = app(CurrentHotel::class)->currency();
 
         $now = now($timezone);
         $today = $now->copy()->startOfDay();
@@ -135,6 +135,8 @@ class DashboardController extends Controller
 
     /**
      * Active bills that were not voided.
+     *
+     * @return Builder<Bill>
      */
     private function billQuery(): Builder
     {
@@ -187,7 +189,7 @@ class DashboardController extends Controller
             ->get(['issued_at', 'total', 'status']);
 
         $byDate = $bills->groupBy(
-            fn (Bill $bill) => $bill->issued_at?->toDateString(),
+            fn (Bill $bill) => $bill->issued_at?->toDateString() ?? '',
         );
 
         $paymentsByDate = Payment::query()
@@ -195,9 +197,9 @@ class DashboardController extends Controller
             ->whereDate('paid_at', '>=', $start->toDateString())
             ->whereDate('paid_at', '<=', $today->toDateString())
             ->get(['paid_at', 'amount'])
-            ->groupBy(fn (Payment $payment) => $payment->paid_at?->toDateString());
+            ->groupBy(fn (Payment $payment) => $payment->paid_at->toDateString());
 
-        return collect(range(0, 29))
+        return array_values(collect(range(0, 29))
             ->map(function (int $offset) use ($start, $byDate, $paymentsByDate): array {
                 $date = $start->copy()->addDays($offset)->toDateString();
                 $dayBills = $byDate->get($date, collect());
@@ -210,7 +212,7 @@ class DashboardController extends Controller
                 ];
             })
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -232,12 +234,12 @@ class DashboardController extends Controller
             ->get(['reserved_at'])
             ->countBy(
                 fn (Reservation $reservation) => $reservation->reserved_at
-                    ?->copy()
+                    ->copy()
                     ->setTimezone($timezone)
                     ->toDateString(),
             );
 
-        return collect(range(0, 13))
+        return array_values(collect(range(0, 13))
             ->map(function (int $offset) use ($start, $counts): array {
                 $date = $start->copy()->addDays($offset)->toDateString();
 
@@ -247,7 +249,7 @@ class DashboardController extends Controller
                 ];
             })
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -276,7 +278,7 @@ class DashboardController extends Controller
             ])
             ->values();
 
-        return $statuses->concat($extra)->all();
+        return array_values($statuses->concat($extra)->all());
     }
 
     /**
@@ -284,18 +286,18 @@ class DashboardController extends Controller
      */
     private function roomDistribution(): array
     {
-        return Room::query()
+        return array_values(Room::query()
             ->where('active', true)
             ->with('area:id,name')
             ->get(['id', 'area_id'])
-            ->groupBy(fn (Room $room) => $room->area?->name ?? 'Sin Ã¡rea')
+            ->groupBy(fn (Room $room) => $room->area === null ? 'Sin Ã¡rea' : $room->area->name)
             ->map(fn ($rooms, string $area): array => [
                 'area' => $area,
                 'count' => $rooms->count(),
             ])
             ->sortByDesc('count')
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -303,14 +305,14 @@ class DashboardController extends Controller
      */
     private function recentReservations(): array
     {
-        return Reservation::query()
+        return array_values(Reservation::query()
             ->with(['client:id,first_name,last_name', 'room:id,name'])
             ->where('active', true)
             ->latest('id')
             ->limit(6)
             ->get()
             ->map(fn (Reservation $reservation) => $this->reservationPayload($reservation))
-            ->all();
+            ->all());
     }
 
     /**
@@ -318,7 +320,7 @@ class DashboardController extends Controller
      */
     private function upcomingCheckIns(CarbonInterface $todayUtc): array
     {
-        return Reservation::query()
+        return array_values(Reservation::query()
             ->with(['client:id,first_name,last_name', 'room:id,name'])
             ->where('active', true)
             ->whereIn('status', ['Pendiente', 'Confirmada'])
@@ -327,7 +329,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn (Reservation $reservation) => $this->reservationPayload($reservation))
-            ->all();
+            ->all());
     }
 
     /**
@@ -335,7 +337,7 @@ class DashboardController extends Controller
      */
     private function upcomingCheckOuts(CarbonInterface $todayUtc): array
     {
-        return Reservation::query()
+        return array_values(Reservation::query()
             ->with(['client:id,first_name,last_name', 'room:id,name'])
             ->where('active', true)
             ->where('status', 'En curso')
@@ -345,7 +347,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn (Reservation $reservation) => $this->reservationPayload($reservation))
-            ->all();
+            ->all());
     }
 
     /**
@@ -353,7 +355,7 @@ class DashboardController extends Controller
      */
     private function recentBills(): array
     {
-        return Bill::query()
+        return array_values(Bill::query()
             ->with('client:id,first_name,last_name')
             ->where('active', true)
             ->orderByDesc('issued_at')
@@ -364,12 +366,12 @@ class DashboardController extends Controller
                 'id' => $bill->id,
                 'number' => $bill->number,
                 'client' => $this->clientName($bill->client),
-                'issuedAt' => $bill->issued_at?->toDateString(),
+                'issuedAt' => $bill->issued_at->toDateString(),
                 'total' => (float) $bill->total,
                 'status' => $bill->status,
                 'active' => $bill->active,
             ])
-            ->all();
+            ->all());
     }
 
     /**
@@ -380,8 +382,8 @@ class DashboardController extends Controller
         return [
             'id' => $reservation->id,
             'client' => $this->clientName($reservation->client),
-            'room' => $reservation->room?->name ?? 'Sin habitaciÃ³n',
-            'reservedAt' => $reservation->reserved_at?->toIso8601String(),
+            'room' => $reservation->room === null ? 'Sin habitaciÃ³n' : $reservation->room->name,
+            'reservedAt' => $reservation->reserved_at->toIso8601String(),
             'finishedAt' => $reservation->finished_at?->toIso8601String(),
             'guests' => (int) $reservation->guests,
             'status' => $reservation->status,

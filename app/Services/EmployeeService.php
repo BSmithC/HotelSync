@@ -72,7 +72,7 @@ class EmployeeService
         bool $canSensitive,
     ): Employee {
         return DB::transaction(function () use ($employee, $data, $canSensitive): Employee {
-            $employee = Employee::query()->lockForUpdate()->findOrFail($employee->getKey());
+            $employee = Employee::query()->lockForUpdate()->findOrFail((int) $employee->getKey());
 
             // Capture the previous state before save(), because getOriginal()
             // returns the new values once the model has been persisted.
@@ -130,7 +130,7 @@ class EmployeeService
         User $actor,
     ): Employee {
         return DB::transaction(function () use ($employee, $target, $role, $actor): Employee {
-            $employee = Employee::query()->lockForUpdate()->findOrFail($employee->getKey());
+            $employee = Employee::query()->lockForUpdate()->findOrFail((int) $employee->getKey());
             $hotel = app(CurrentHotel::class)->model();
 
             if ($hotel === null) {
@@ -204,7 +204,7 @@ class EmployeeService
     public function revokeAccess(Employee $employee, User $actor): Employee
     {
         return DB::transaction(function () use ($employee, $actor): Employee {
-            $employee = Employee::query()->lockForUpdate()->findOrFail($employee->getKey());
+            $employee = Employee::query()->lockForUpdate()->findOrFail((int) $employee->getKey());
             $hotel = app(CurrentHotel::class)->model();
 
             if ($employee->user_id === null) {
@@ -283,9 +283,9 @@ class EmployeeService
             'first_name' => $this->clean($data['first_name'] ?? null, 80),
             'last_name' => $this->clean($data['last_name'] ?? null, 80),
             'position' => $this->clean($data['position'] ?? null, 80),
-            'department' => $data['department'] ?? $employee?->department ?? 'otro',
+            'department' => $data['department'] ?? $employee->department ?? 'otro',
             'hire_date' => $data['hire_date'] ?? $employee?->hire_date?->toDateString(),
-            'status' => $data['status'] ?? $employee?->status ?? Employee::ACTIVO,
+            'status' => $data['status'] ?? $employee->status ?? Employee::ACTIVO,
         ];
     }
 
@@ -319,7 +319,7 @@ class EmployeeService
             'last_name' => $employee->last_name,
             'position' => $employee->position,
             'department' => $employee->department,
-            'hire_date' => $employee->hire_date?->toDateString(),
+            'hire_date' => $employee->hire_date->toDateString(),
             'status' => $employee->status,
             'has_access' => $employee->user_id !== null,
         ];

@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string|null $description
  * @property array<string, mixed>|null $changes
  * @property string|null $ip
+ * @property \Carbon\CarbonImmutable|null $created_at
+ * @property \Carbon\CarbonImmutable|null $updated_at
  */
 class AuditLog extends Model
 {
@@ -50,11 +52,17 @@ class AuditLog extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return MorphTo<Model, $this>
+     */
     public function subject(): MorphTo
     {
         return $this->morphTo();

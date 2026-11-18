@@ -33,6 +33,9 @@ trait BelongsToHotel
         });
     }
 
+    /**
+     * @return BelongsTo<Hotel, $this>
+     */
     public function hotel(): BelongsTo
     {
         return $this->belongsTo(Hotel::class);

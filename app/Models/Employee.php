@@ -14,6 +14,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * hidden by default and only exposed when the actor holds
  * `employees.sensitive`. The application never hard-deletes an employee:
  * leaving the hotel is represented by the `inactivo` status.
+ *
+ * @property int $id
+ * @property int|null $hotel_id
+ * @property int|null $user_id
+ * @property string $first_name
+ * @property string $last_name
+ * @property string|null $cedula
+ * @property \Carbon\CarbonImmutable|null $birth_date
+ * @property string|null $phone
+ * @property string|null $email
+ * @property string|null $address
+ * @property string $position
+ * @property string $department
+ * @property \Carbon\CarbonImmutable $hire_date
+ * @property string $status
+ * @property string|null $salary
+ * @property string|null $bank_account
+ * @property string|null $emergency_contact_name
+ * @property string|null $emergency_contact_phone
+ * @property string|null $notes
+ * @property int $total
  */
 class Employee extends Model
 {
@@ -103,6 +124,9 @@ class Employee extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -46,6 +46,8 @@ class User extends Authenticatable
 
     /**
      * Hotels (tenants) this user has access to.
+     *
+     * @return BelongsToMany<Hotel, $this>
      */
     public function hotels(): BelongsToMany
     {
@@ -65,7 +67,7 @@ class User extends Authenticatable
             return $this->roleCache[$hotelId];
         }
 
-        $role = $this->hotels()->whereKey($hotelId)->first()?->pivot?->role;
+        $role = $this->hotels()->whereKey($hotelId)->first()?->pivot?->getAttribute('role');
 
         return $this->roleCache[$hotelId] = $role === null ? null : (string) $role;
     }

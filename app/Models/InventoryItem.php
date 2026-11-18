@@ -12,6 +12,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * The `stock` column is a balance cached from the append-only movement
  * ledger. It is only written by InventoryService, inside the same
  * transaction that inserts a movement, so it can never drift on its own.
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property string $name
+ * @property string|null $sku
+ * @property string $category
+ * @property string $unit
+ * @property string $min_stock
+ * @property string $unit_cost
+ * @property string $stock
+ * @property bool $active
  */
 class InventoryItem extends Model
 {
@@ -70,6 +81,9 @@ class InventoryItem extends Model
         ];
     }
 
+    /**
+     * @return HasMany<InventoryMovement, $this>
+     */
     public function movements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);

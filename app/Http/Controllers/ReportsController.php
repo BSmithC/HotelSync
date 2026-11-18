@@ -14,7 +14,7 @@ use App\Models\ServiceRequest;
 use App\Support\CurrentHotel;
 use App\Support\Permission;
 use Carbon\CarbonImmutable;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -52,8 +52,8 @@ class ReportsController extends Controller
         $this->authorize(Permission::ReportsView->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
-        $currency = $hotel?->currency ?? 'DOP';
+        $timezone = app(CurrentHotel::class)->timezone();
+        $currency = app(CurrentHotel::class)->currency();
 
         [$from, $to] = $this->resolvePeriod($request, $timezone);
         $periodDays = (int) $from->diffInDays($to) + 1;
@@ -128,7 +128,7 @@ class ReportsController extends Controller
         $this->authorize(Permission::ReportsExport->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
+        $timezone = app(CurrentHotel::class)->timezone();
 
         [$from, $to] = $this->resolvePeriod($request, $timezone);
         $periodDays = (int) $from->diffInDays($to) + 1;
@@ -204,7 +204,7 @@ class ReportsController extends Controller
 
         $date = CarbonImmutable::createFromFormat('!Y-m-d', $value, $timezone);
 
-        return $date === false ? null : $date->startOfDay();
+        return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
     /**
@@ -337,13 +337,9 @@ class ReportsController extends Controller
 
         foreach ($reservations as $reservation) {
             $arrival = $reservation->reserved_at
-                ?->copy()
+                ->copy()
                 ->setTimezone($timezone)
                 ->startOfDay();
-
-            if ($arrival === null) {
-                continue;
-            }
 
             $departure = $reservation->finished_at
                 ?->copy()
@@ -396,17 +392,17 @@ class ReportsController extends Controller
     ): array {
         $invoicedByDate = $this->invoicedQuery($from, $to)
             ->get(['issued_at', 'total'])
-            ->groupBy(fn (Bill $bill) => $bill->issued_at?->toDateString())
+            ->groupBy(fn (Bill $bill) => $bill->issued_at->toDateString())
             ->map(fn ($bills) => round((float) $bills->sum('total'), 2));
 
         $collectedByDate = $this->collectionsQuery($from, $to)
             ->get(['paid_at', 'amount'])
-            ->groupBy(fn (Payment $payment) => $payment->paid_at?->toDateString())
+            ->groupBy(fn (Payment $payment) => $payment->paid_at->toDateString())
             ->map(fn ($payments) => round((float) $payments->sum('amount'), 2));
 
         $expensesByDate = $this->expensesQuery($from, $to)
             ->get(['expense_date', 'amount'])
-            ->groupBy(fn (Expense $expense) => $expense->expense_date?->toDateString())
+            ->groupBy(fn (Expense $expense) => $expense->expense_date->toDateString())
             ->map(fn ($expenses) => round((float) $expenses->sum('amount'), 2));
 
         $reservations = $this->reservationsQuery($from, $to)->get([
@@ -420,7 +416,7 @@ class ReportsController extends Controller
         $activeRooms = $this->activeRooms();
         $days = (int) $from->diffInDays($to) + 1;
 
-        return collect(range(0, max(0, $days - 1)))
+        return array_values(collect(range(0, max(0, $days - 1)))
             ->map(function (int $offset) use ($from, $activeRooms, $invoicedByDate, $collectedByDate, $expensesByDate, $occupancy): array {
                 $date = $from->copy()->addDays($offset)->toDateString();
                 $nights = (int) ($occupancy['byDate'][$date] ?? 0);
@@ -436,7 +432,7 @@ class ReportsController extends Controller
                 ];
             })
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -444,7 +440,7 @@ class ReportsController extends Controller
      */
     private function expensesByCategory(CarbonImmutable $from, CarbonImmutable $to): array
     {
-        return $this->expensesQuery($from, $to)
+        return array_values($this->expensesQuery($from, $to)
             ->get(['category', 'amount'])
             ->groupBy('category')
             ->map(fn ($expenses, string $category): array => [
@@ -453,7 +449,7 @@ class ReportsController extends Controller
             ])
             ->sortByDesc('amount')
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -461,17 +457,17 @@ class ReportsController extends Controller
      */
     private function revenueByMethod(CarbonImmutable $from, CarbonImmutable $to): array
     {
-        return $this->collectionsQuery($from, $to)
+        return array_values($this->collectionsQuery($from, $to)
             ->get(['method', 'amount'])
             ->groupBy('method')
             ->map(fn ($payments, string $method): array => [
                 'method' => $method,
                 'amount' => round((float) $payments->sum('amount'), 2),
-                'count' => $payments->count(),
+                'count' => (int) $payments->count(),
             ])
             ->sortByDesc('amount')
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -500,7 +496,7 @@ class ReportsController extends Controller
             ])
             ->values();
 
-        return $known->concat($extra)->all();
+        return array_values($known->concat($extra)->all());
     }
 
     /**
@@ -508,13 +504,13 @@ class ReportsController extends Controller
      */
     private function topServices(CarbonImmutable $from, CarbonImmutable $to): array
     {
-        return ServiceRequest::query()
+        return array_values(ServiceRequest::query()
             ->with('service:id,name')
             ->whereDate('requested_at', '>=', $from->toDateString())
             ->whereDate('requested_at', '<=', $to->toDateString())
             ->where('status', '!=', ServiceRequest::ANULADO)
             ->get(['id', 'service_id', 'quantity', 'total'])
-            ->groupBy(fn (ServiceRequest $request) => $request->service?->name ?? 'Sin servicio')
+            ->groupBy(fn (ServiceRequest $request) => $request->service->name)
             ->map(fn ($requests, string $service): array => [
                 'service' => $service,
                 'quantity' => (int) $requests->sum('quantity'),
@@ -523,7 +519,7 @@ class ReportsController extends Controller
             ->sortByDesc('total')
             ->take(6)
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -531,7 +527,7 @@ class ReportsController extends Controller
      */
     private function lowStock(): array
     {
-        return InventoryItem::query()
+        return array_values(InventoryItem::query()
             ->where('active', true)
             ->whereColumn('stock', '<=', 'min_stock')
             ->orderBy('stock')
@@ -546,7 +542,7 @@ class ReportsController extends Controller
                 'stock' => round((float) $item->stock, 2),
                 'minStock' => round((float) $item->min_stock, 2),
             ])
-            ->all();
+            ->all());
     }
 
     /**
@@ -626,15 +622,23 @@ class ReportsController extends Controller
             ->latest('id')
             ->paginate(12, ['*'], 'detail_page')
             ->withQueryString()
-            ->through(fn (FinanceMovement $movement): array => [
-                'id' => $movement->id,
-                'date' => $movement->occurred_at?->toDateString(),
-                'direction' => $movement->direction,
-                'amount' => round((float) $movement->amount, 2),
-                'description' => $movement->description,
-                'reversalOfId' => $movement->reversal_of_id,
-                'createdBy' => $movement->createdBy?->name,
-            ]);
+            ->through(fn (FinanceMovement $movement): array => $this->financeRow($movement));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function financeRow(FinanceMovement $movement): array
+    {
+        return [
+            'id' => $movement->id,
+            'date' => $movement->occurred_at->toDateString(),
+            'direction' => $movement->direction,
+            'amount' => round((float) $movement->amount, 2),
+            'description' => $movement->description,
+            'reversalOfId' => $movement->reversal_of_id,
+            'createdBy' => $movement->createdBy?->name,
+        ];
     }
 
     /**
@@ -664,28 +668,32 @@ class ReportsController extends Controller
             ->orderByDesc('id')
             ->paginate(10, ['*'], 'detail_page')
             ->withQueryString()
-            ->through(fn (Reservation $reservation): array => [
-                'id' => $reservation->id,
-                'client' => $reservation->client
-                    ? trim($reservation->client->first_name.' '.$reservation->client->last_name)
-                    : 'Sin huésped',
-                'room' => $reservation->room?->name ?? 'Sin habitación',
-                'status' => $reservation->status,
-                'guests' => (int) $reservation->guests,
-                'arrival' => $reservation->reserved_at?->copy()->setTimezone($timezone)->toDateString(),
-                'departure' => $reservation->finished_at?->copy()->setTimezone($timezone)->toDateString(),
-                'nights' => $this->reservationNights($reservation),
-            ]);
+            ->through(fn (Reservation $reservation): array => $this->operationRow($reservation, $timezone));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function operationRow(Reservation $reservation, string $timezone): array
+    {
+        return [
+            'id' => $reservation->id,
+            'client' => $reservation->client
+                ? trim($reservation->client->first_name.' '.$reservation->client->last_name)
+                : 'Sin huésped',
+            'room' => $reservation->room->name,
+            'status' => $reservation->status,
+            'guests' => (int) $reservation->guests,
+            'arrival' => $reservation->reserved_at->copy()->setTimezone($timezone)->toDateString(),
+            'departure' => $reservation->finished_at?->copy()->setTimezone($timezone)->toDateString(),
+            'nights' => $this->reservationNights($reservation),
+        ];
     }
 
     private function reservationNights(Reservation $reservation): int
     {
-        $arrival = $reservation->reserved_at?->copy()->startOfDay();
+        $arrival = $reservation->reserved_at->copy()->startOfDay();
         $departure = $reservation->finished_at?->copy()->startOfDay();
-
-        if ($arrival === null) {
-            return 0;
-        }
 
         if ($departure === null || $departure->lessThanOrEqualTo($arrival)) {
             return 1;
@@ -730,18 +738,26 @@ class ReportsController extends Controller
             ->latest('id')
             ->paginate(10, ['*'], 'detail_page')
             ->withQueryString()
-            ->through(fn (ServiceRequest $request): array => [
-                'id' => $request->id,
-                'service' => $request->service?->name ?? 'Servicio eliminado',
-                'category' => $request->service?->category,
-                'client' => $request->client
-                    ? trim($request->client->first_name.' '.$request->client->last_name)
-                    : null,
-                'status' => $request->status,
-                'quantity' => (int) $request->quantity,
-                'total' => round((float) $request->total, 2),
-                'requestedAt' => $request->requested_at?->toDateString(),
-            ]);
+            ->through(fn (ServiceRequest $request): array => $this->serviceRow($request));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serviceRow(ServiceRequest $request): array
+    {
+        return [
+            'id' => $request->id,
+            'service' => $request->service->name,
+            'category' => $request->service->category,
+            'client' => $request->client
+                ? trim($request->client->first_name.' '.$request->client->last_name)
+                : null,
+            'status' => $request->status,
+            'quantity' => (int) $request->quantity,
+            'total' => round((float) $request->total, 2),
+            'requestedAt' => $request->requested_at->toDateString(),
+        ];
     }
 
     /**
@@ -778,22 +794,30 @@ class ReportsController extends Controller
             ->latest('id')
             ->paginate(12, ['*'], 'detail_page')
             ->withQueryString()
-            ->through(fn (InventoryMovement $movement): array => [
-                'id' => $movement->id,
-                'item' => $movement->item?->name ?? 'Artículo eliminado',
-                'sku' => $movement->item?->sku,
-                'unit' => $movement->item?->unit,
-                'type' => $movement->type,
-                'quantity' => round((float) $movement->quantity, 2),
-                'unitCost' => $movement->unit_cost === null ? null : round((float) $movement->unit_cost, 2),
-                'reason' => $movement->reason,
-                'reference' => $movement->reference,
-                'date' => $movement->occurred_at?->toDateString(),
-                'state' => $movement->voided_at !== null
-                    ? 'anulado'
-                    : ($movement->reversal_of_id !== null ? 'reverso' : 'vigente'),
-                'createdBy' => $movement->createdBy?->name,
-            ]);
+            ->through(fn (InventoryMovement $movement): array => $this->inventoryRow($movement));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function inventoryRow(InventoryMovement $movement): array
+    {
+        return [
+            'id' => $movement->id,
+            'item' => $movement->item->name,
+            'sku' => $movement->item->sku,
+            'unit' => $movement->item->unit,
+            'type' => $movement->type,
+            'quantity' => round((float) $movement->quantity, 2),
+            'unitCost' => $movement->unit_cost === null ? null : round((float) $movement->unit_cost, 2),
+            'reason' => $movement->reason,
+            'reference' => $movement->reference,
+            'date' => $movement->occurred_at->toDateString(),
+            'state' => $movement->voided_at !== null
+                ? 'anulado'
+                : ($movement->reversal_of_id !== null ? 'reverso' : 'vigente'),
+            'createdBy' => $movement->createdBy?->name,
+        ];
     }
 
     /**
@@ -887,7 +911,7 @@ class ReportsController extends Controller
             ->each(function (FinanceMovement $movement) use ($handle): void {
                 fputcsv($handle, [
                     $movement->id,
-                    $movement->occurred_at?->toDateString(),
+                    $movement->occurred_at->toDateString(),
                     $movement->direction,
                     number_format((float) $movement->amount, 2, '.', ''),
                     $movement->description,
@@ -919,7 +943,7 @@ class ReportsController extends Controller
                         ? trim($reservation->client->first_name.' '.$reservation->client->last_name)
                         : '',
                     $reservation->room?->name,
-                    $reservation->reserved_at?->copy()->setTimezone($timezone)->toDateString(),
+                    $reservation->reserved_at->copy()->setTimezone($timezone)->toDateString(),
                     $reservation->finished_at?->copy()->setTimezone($timezone)->toDateString(),
                     $this->reservationNights($reservation),
                     (int) $reservation->guests,
@@ -947,7 +971,7 @@ class ReportsController extends Controller
                     $request->client
                         ? trim($request->client->first_name.' '.$request->client->last_name)
                         : '',
-                    $request->requested_at?->toDateString(),
+                    $request->requested_at->toDateString(),
                     (int) $request->quantity,
                     number_format((float) $request->total, 2, '.', ''),
                     $request->status,
@@ -972,7 +996,7 @@ class ReportsController extends Controller
                     $movement->id,
                     $movement->item?->name,
                     $movement->item?->sku,
-                    $movement->occurred_at?->toDateString(),
+                    $movement->occurred_at->toDateString(),
                     $movement->type,
                     number_format((float) $movement->quantity, 2, '.', ''),
                     $movement->unit_cost === null

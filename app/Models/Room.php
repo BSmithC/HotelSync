@@ -8,6 +8,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property string $name
+ * @property int $capacity
+ * @property int $area_id
+ * @property string $shape
+ * @property int|null $pos_y
+ * @property int|null $pos_x
+ * @property int|null $width
+ * @property int|null $height
+ * @property int|null $rotation
+ * @property bool $active
+ * @property string|null $description
+ * @property string|null $price
+ * @property string|null $phone
+ * @property string $status
+ */
 class Room extends Model
 {
     use BelongsToHotel;
@@ -41,16 +60,25 @@ class Room extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Area, $this>
+     */
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
     }
 
+    /**
+     * @return HasMany<Reservation, $this>
+     */
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
     }
 
+    /**
+     * @return HasMany<RoomStatusLog, $this>
+     */
     public function statusLogs(): HasMany
     {
         return $this->hasMany(RoomStatusLog::class);
@@ -61,6 +89,8 @@ class Room extends Model
      *
      * A plain ordered `hasOne` keeps the eager load simple; `latestOfMany()`
      * creates a self-join whose `room_id` is ambiguous on SQLite.
+     *
+     * @return HasOne<Reservation, $this>
      */
     public function currentReservation(): HasOne
     {

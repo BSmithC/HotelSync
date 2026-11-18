@@ -50,12 +50,6 @@ class ReceptionService
 
             $targetRoomId = $roomId ?? $reservation->room_id;
 
-            if ($targetRoomId === null) {
-                throw ValidationException::withMessages([
-                    'room_id' => 'Selecciona una habitación para el check-in.',
-                ]);
-            }
-
             $room = $this->lockRoom($targetRoomId);
             $this->assertRoomCanHost($room, $reservation);
 
@@ -71,7 +65,7 @@ class ReceptionService
 
             $this->setRoomStatus($room, 'ocupada', $user, $reservation->id, 'Check-in');
 
-            if ($previousRoomId !== null && $previousRoomId !== $room->id) {
+            if ($previousRoomId !== $room->id) {
                 $this->releaseRoom($previousRoomId, $user, $reservation->id);
             }
 
@@ -129,9 +123,7 @@ class ReceptionService
                 'checked_out_by' => $user->id,
             ])->save();
 
-            if ($reservation->room_id !== null) {
-                $this->releaseRoom($reservation->room_id, $user, $reservation->id, 'Check-out');
-            }
+            $this->releaseRoom($reservation->room_id, $user, $reservation->id, 'Check-out');
 
             $this->audit->record(
                 module: 'reception',
@@ -181,7 +173,7 @@ class ReceptionService
 
             $this->setRoomStatus($destination, 'ocupada', $user, $reservation->id, 'Cambio de habitación');
 
-            if ($previousRoomId !== null) {
+            if ($previousRoomId !== $destination->id) {
                 $this->releaseRoom($previousRoomId, $user, $reservation->id, 'Cambio de habitación');
             }
 
@@ -299,7 +291,7 @@ class ReceptionService
         ?string $resolution = null,
     ): Incident {
         return DB::transaction(function () use ($incident, $status, $user, $resolution): Incident {
-            $incident = Incident::query()->lockForUpdate()->findOrFail($incident->getKey());
+            $incident = Incident::query()->lockForUpdate()->findOrFail((int) $incident->getKey());
 
             $allowed = [
                 'abierta' => ['en_proceso', 'resuelta'],
@@ -345,7 +337,7 @@ class ReceptionService
 
     private function lockReservation(Reservation $reservation): Reservation
     {
-        return Reservation::query()->lockForUpdate()->findOrFail($reservation->getKey());
+        return Reservation::query()->lockForUpdate()->findOrFail((int) $reservation->getKey());
     }
 
     private function lockRoom(int $roomId): Room

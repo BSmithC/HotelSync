@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Room change history: every check-in or transfer leaves a trace.
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property int $reservation_id
+ * @property int|null $from_room_id
+ * @property int $to_room_id
+ * @property int|null $assigned_by
+ * @property \Carbon\CarbonImmutable $assigned_at
+ * @property string|null $reason
  */
 class RoomAssignment extends Model
 {
@@ -33,21 +42,33 @@ class RoomAssignment extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Reservation, $this>
+     */
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
     }
 
+    /**
+     * @return BelongsTo<Room, $this>
+     */
     public function fromRoom(): BelongsTo
     {
         return $this->belongsTo(Room::class, 'from_room_id');
     }
 
+    /**
+     * @return BelongsTo<Room, $this>
+     */
     public function toRoom(): BelongsTo
     {
         return $this->belongsTo(Room::class, 'to_room_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');

@@ -11,6 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * Services are never hard-deleted by the application: they are deactivated so
  * historical requests keep their reference and price.
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property string $name
+ * @property string $category
+ * @property string|null $description
+ * @property string $price
+ * @property bool $active
  */
 class Service extends Model
 {
@@ -50,6 +58,9 @@ class Service extends Model
         ];
     }
 
+    /**
+     * @return HasMany<ServiceRequest, $this>
+     */
     public function requests(): HasMany
     {
         return $this->hasMany(ServiceRequest::class);

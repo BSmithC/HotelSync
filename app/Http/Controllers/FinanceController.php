@@ -41,8 +41,8 @@ class FinanceController extends Controller
         $this->authorize(Permission::FinanceView->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
-        $currency = $hotel?->currency ?? 'DOP';
+        $timezone = app(CurrentHotel::class)->timezone();
+        $currency = app(CurrentHotel::class)->currency();
 
         [$from, $to] = $this->resolvePeriod($request, $timezone);
         $periodDays = (int) $from->diffInDays($to) + 1;
@@ -268,7 +268,7 @@ class FinanceController extends Controller
         $this->authorize(Permission::ReportsExport->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
+        $timezone = app(CurrentHotel::class)->timezone();
         [$from, $to] = $this->resolvePeriod($request, $timezone);
 
         $type = (string) $request->input('type', 'movements');
@@ -331,9 +331,9 @@ class FinanceController extends Controller
         $this->paymentsQuery($from, $to, '', '', '')->cursor()->each(function (Payment $payment) use ($handle): void {
             fputcsv($handle, [
                 $payment->id,
-                $payment->bill?->number ?? '',
+                $payment->bill->number,
                 $payment->client ? "{$payment->client->first_name} {$payment->client->last_name}" : '',
-                $payment->paid_at?->toDateString(),
+                $payment->paid_at->toDateString(),
                 $payment->method,
                 number_format((float) $payment->amount, 2, '.', ''),
                 $payment->reference,
@@ -355,7 +355,7 @@ class FinanceController extends Controller
                 $expense->id,
                 $expense->category,
                 $expense->description,
-                $expense->expense_date?->toDateString(),
+                $expense->expense_date->toDateString(),
                 $expense->method,
                 number_format((float) $expense->amount, 2, '.', ''),
                 $expense->supplier,
@@ -376,7 +376,7 @@ class FinanceController extends Controller
         $this->movementsQuery($from, $to, '', '')->cursor()->each(function (FinanceMovement $movement) use ($handle): void {
             fputcsv($handle, [
                 $movement->id,
-                $movement->occurred_at?->toDateString(),
+                $movement->occurred_at->toDateString(),
                 $movement->direction,
                 number_format((float) $movement->amount, 2, '.', ''),
                 $movement->description,
@@ -606,9 +606,9 @@ class FinanceController extends Controller
             ->whereDate('issued_at', '<=', $end->toDateString())
             ->get(['issued_at', 'total'])
             ->each(function (Bill $bill) use (&$series): void {
-                $key = $bill->issued_at?->format('Y-m');
+                $key = $bill->issued_at->format('Y-m');
 
-                if ($key !== null && isset($series[$key])) {
+                if (isset($series[$key])) {
                     $series[$key]['invoiced'] = round($series[$key]['invoiced'] + (float) $bill->total, 2);
                 }
             });
@@ -619,9 +619,9 @@ class FinanceController extends Controller
             ->whereDate('paid_at', '<=', $end->toDateString())
             ->get(['paid_at', 'amount'])
             ->each(function (Payment $payment) use (&$series): void {
-                $key = $payment->paid_at?->format('Y-m');
+                $key = $payment->paid_at->format('Y-m');
 
-                if ($key !== null && isset($series[$key])) {
+                if (isset($series[$key])) {
                     $series[$key]['collected'] = round($series[$key]['collected'] + (float) $payment->amount, 2);
                 }
             });
@@ -632,9 +632,9 @@ class FinanceController extends Controller
             ->whereDate('expense_date', '<=', $end->toDateString())
             ->get(['expense_date', 'amount'])
             ->each(function (Expense $expense) use (&$series): void {
-                $key = $expense->expense_date?->format('Y-m');
+                $key = $expense->expense_date->format('Y-m');
 
-                if ($key !== null && isset($series[$key])) {
+                if (isset($series[$key])) {
                     $series[$key]['expenses'] = round($series[$key]['expenses'] + (float) $expense->amount, 2);
                 }
             });
@@ -645,11 +645,11 @@ class FinanceController extends Controller
     /**
      * Invoices that still have a balance, used by the payment dialog.
      *
-     * @return list<array<string, mixed>>
+     * @return list<array{id: int, number: string, client: string, total: float, paid: float, balance: float, issued_at: string}>
      */
     private function payableBills(): array
     {
-        return Bill::query()
+        return array_values(Bill::query()
             ->with('client:id,first_name,last_name')
             ->withSum(['payments as paid_total' => fn (Builder $query) => $query->where('status', 'registrado')], 'amount')
             ->where('active', true)
@@ -669,12 +669,12 @@ class FinanceController extends Controller
                     'total' => round((float) $bill->total, 2),
                     'paid' => $paid,
                     'balance' => round((float) $bill->total - $paid, 2),
-                    'issued_at' => $bill->issued_at?->toDateString(),
+                    'issued_at' => $bill->issued_at->toDateString(),
                 ];
             })
             ->filter(fn (array $bill): bool => $bill['balance'] > 0.005)
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -703,7 +703,7 @@ class FinanceController extends Controller
 
         $date = CarbonImmutable::createFromFormat('!Y-m-d', $value, $timezone);
 
-        return $date === false ? null : $date->startOfDay();
+        return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
     /**

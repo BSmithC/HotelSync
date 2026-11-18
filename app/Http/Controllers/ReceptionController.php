@@ -34,7 +34,7 @@ class ReceptionController extends Controller
         $this->authorize(Permission::ReceptionView->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
+        $timezone = app(CurrentHotel::class)->timezone();
 
         $now = CarbonImmutable::now($timezone);
         $day = $this->resolveDay($request->input('date'), $timezone, $now);
@@ -116,7 +116,7 @@ class ReceptionController extends Controller
 
         return Inertia::render('Reception/Index', [
             'timezone' => $timezone,
-            'currency' => $hotel?->currency ?? 'DOP',
+            'currency' => app(CurrentHotel::class)->currency(),
             'day' => $day->toDateString(),
             'isToday' => $day->isSameDay($now),
             'kpis' => [
@@ -304,7 +304,7 @@ class ReceptionController extends Controller
 
         app(ReceptionService::class)->changeRoom(
             $reservation,
-            Room::findOrFail($validated['room_id']),
+            Room::findOrFail((int) $validated['room_id']),
             $request->user(),
             $validated['reason'] ?? null,
         );
@@ -341,7 +341,7 @@ class ReceptionController extends Controller
         ]);
 
         if (empty($validated['room_id']) && ! empty($validated['reservation_id'])) {
-            $validated['room_id'] = Reservation::find($validated['reservation_id'])?->room_id;
+            $validated['room_id'] = Reservation::find((int) $validated['reservation_id'])?->room_id;
         }
 
         app(ReceptionService::class)->createIncident($validated, $request->user());
@@ -476,7 +476,7 @@ class ReceptionController extends Controller
 
         $day = CarbonImmutable::createFromFormat('Y-m-d', $value, $timezone);
 
-        if ($day === false) {
+        if (! $day instanceof CarbonImmutable) {
             return $now;
         }
 

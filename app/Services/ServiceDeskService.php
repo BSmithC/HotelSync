@@ -65,7 +65,7 @@ class ServiceDeskService
     public function updateService(Service $service, array $data, User $user): Service
     {
         return DB::transaction(function () use ($service, $data): Service {
-            $service = Service::query()->lockForUpdate()->findOrFail($service->getKey());
+            $service = Service::query()->lockForUpdate()->findOrFail((int) $service->getKey());
 
             // Capture the previous state before save() because getOriginal()
             // returns the new values once the model has been persisted.
@@ -134,9 +134,7 @@ class ServiceDeskService
                 $reservation = Reservation::query()
                     ->findOrFail((int) $data['reservation_id']);
 
-                if ($reservation->client_id !== null) {
-                    $clientId = (int) $reservation->client_id;
-                }
+                $clientId = (int) $reservation->client_id;
             }
 
             if ($key !== null) {
@@ -199,7 +197,7 @@ class ServiceDeskService
     public function changeStatus(ServiceRequest $request, string $status, User $user): ServiceRequest
     {
         return DB::transaction(function () use ($request, $status): ServiceRequest {
-            $request = ServiceRequest::query()->lockForUpdate()->findOrFail($request->getKey());
+            $request = ServiceRequest::query()->lockForUpdate()->findOrFail((int) $request->getKey());
             $previous = $request->status;
 
             if (! in_array($status, [ServiceRequest::EN_PROCESO, ServiceRequest::COMPLETADO], true)) {
@@ -253,7 +251,7 @@ class ServiceDeskService
     public function voidRequest(ServiceRequest $request, User $user, string $reason): ServiceRequest
     {
         return DB::transaction(function () use ($request, $user, $reason): ServiceRequest {
-            $request = ServiceRequest::query()->lockForUpdate()->findOrFail($request->getKey());
+            $request = ServiceRequest::query()->lockForUpdate()->findOrFail((int) $request->getKey());
 
             if ($request->status === ServiceRequest::ANULADO) {
                 throw ValidationException::withMessages([
@@ -314,7 +312,7 @@ class ServiceDeskService
     public function billRequest(ServiceRequest $request, User $user, ?int $billId = null): ServiceRequest
     {
         return DB::transaction(function () use ($request, $user, $billId): ServiceRequest {
-            $request = ServiceRequest::query()->lockForUpdate()->findOrFail($request->getKey());
+            $request = ServiceRequest::query()->lockForUpdate()->findOrFail((int) $request->getKey());
 
             if ($request->status === ServiceRequest::FACTURADO) {
                 throw ValidationException::withMessages([
@@ -488,7 +486,6 @@ class ServiceDeskService
 
     private function timezone(): string
     {
-        return app(CurrentHotel::class)->model()?->timezone
-            ?? config('app.timezone');
+        return app(CurrentHotel::class)->timezone();
     }
 }

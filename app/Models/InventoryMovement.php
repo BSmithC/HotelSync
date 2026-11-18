@@ -13,6 +13,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * `quantity` is the signed delta applied to the item balance. Movements are
  * never updated or deleted: voiding inserts the opposite movement and keeps
  * a reference to the original through `reversal_of_id`.
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property int $inventory_item_id
+ * @property string $type
+ * @property string $quantity
+ * @property string|null $unit_cost
+ * @property string|null $reason
+ * @property string|null $reference
+ * @property \Carbon\CarbonImmutable $occurred_at
+ * @property string|null $idempotency_key
+ * @property int|null $created_by
+ * @property int|null $voided_by
+ * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property string|null $void_reason
+ * @property int|null $reversal_of_id
  */
 class InventoryMovement extends Model
 {
@@ -59,26 +75,41 @@ class InventoryMovement extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<InventoryItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function voidedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by');
     }
 
+    /**
+     * @return BelongsTo<InventoryMovement, $this>
+     */
     public function reversalOf(): BelongsTo
     {
         return $this->belongsTo(self::class, 'reversal_of_id');
     }
 
+    /**
+     * @return HasMany<InventoryMovement, $this>
+     */
     public function reversals(): HasMany
     {
         return $this->hasMany(self::class, 'reversal_of_id');

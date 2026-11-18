@@ -7,6 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property int $client_id
+ * @property int $room_id
+ * @property \Carbon\CarbonImmutable $reserved_at
+ * @property int $guests
+ * @property string|null $notes
+ * @property \Carbon\CarbonImmutable|null $finished_at
+ * @property \Carbon\CarbonImmutable|null $checked_in_at
+ * @property \Carbon\CarbonImmutable|null $checked_out_at
+ * @property int|null $checked_in_by
+ * @property int|null $checked_out_by
+ * @property int $user_id
+ * @property string $status
+ * @property bool $active
+ */
 class Reservation extends Model
 {
     use BelongsToHotel;
@@ -42,46 +60,73 @@ class Reservation extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Client, $this>
+     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
+    /**
+     * @return BelongsTo<Room, $this>
+     */
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return HasMany<Bill, $this>
+     */
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
     }
 
+    /**
+     * @return HasMany<Calendar, $this>
+     */
     public function calendarEvents(): HasMany
     {
         return $this->hasMany(Calendar::class);
     }
 
+    /**
+     * @return HasMany<RoomAssignment, $this>
+     */
     public function assignments(): HasMany
     {
         return $this->hasMany(RoomAssignment::class);
     }
 
+    /**
+     * @return HasMany<Incident, $this>
+     */
     public function incidents(): HasMany
     {
         return $this->hasMany(Incident::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function checkedInBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checked_in_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function checkedOutBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checked_out_by');

@@ -7,6 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property string $category
+ * @property string $description
+ * @property string $amount
+ * @property \Carbon\CarbonImmutable $expense_date
+ * @property string $method
+ * @property string|null $reference
+ * @property string|null $supplier
+ * @property string $status
+ * @property string|null $idempotency_key
+ * @property int|null $created_by
+ * @property int|null $voided_by
+ * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property string|null $void_reason
+ */
 class Expense extends Model
 {
     use BelongsToHotel;
@@ -66,16 +84,25 @@ class Expense extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function voidedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by');
     }
 
+    /**
+     * @return MorphMany<FinanceMovement, $this>
+     */
     public function movements(): MorphMany
     {
         return $this->morphMany(FinanceMovement::class, 'source');

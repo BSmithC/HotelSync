@@ -34,8 +34,8 @@ class ServicesController extends Controller
         $this->authorize(Permission::ServicesView->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
-        $currency = $hotel?->currency ?? 'DOP';
+        $timezone = app(CurrentHotel::class)->timezone();
+        $currency = app(CurrentHotel::class)->currency();
 
         [$from, $to] = $this->resolvePeriod($request, $timezone);
 
@@ -434,21 +434,19 @@ class ServicesController extends Controller
      */
     private function topServices(CarbonImmutable $from, CarbonImmutable $to): array
     {
-        return $this->billedQuery($from, $to)
+        return array_values($this->billedQuery($from, $to)
             ->with('service:id,name')
             ->get(['id', 'service_id', 'quantity', 'total'])
-            ->groupBy('service_id')
-            ->map(function ($group): array {
-                return [
-                    'service' => $group->first()->service?->name ?? 'Servicio',
-                    'quantity' => (int) $group->sum('quantity'),
-                    'total' => round((float) $group->sum('total'), 2),
-                ];
-            })
+            ->groupBy(fn (ServiceRequest $request) => $request->service->name)
+            ->map(fn ($group, string $service): array => [
+                'service' => $service,
+                'quantity' => (int) $group->sum('quantity'),
+                'total' => round((float) $group->sum('total'), 2),
+            ])
             ->sortByDesc('total')
             ->take(5)
             ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -477,7 +475,7 @@ class ServicesController extends Controller
 
         $date = CarbonImmutable::createFromFormat('!Y-m-d', $value, $timezone);
 
-        return $date === false ? null : $date->startOfDay();
+        return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
     /**

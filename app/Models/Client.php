@@ -6,6 +6,18 @@ use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ *
+ * @property int $id
+ * @property int|null $hotel_id
+ * @property string $first_name
+ * @property string $last_name
+ * @property string|null $cedula
+ * @property string|null $rnc
+ * @property string $address
+ * @property string $phone_number
+ * @property bool $active
+ */
 class Client extends Model
 {
     use BelongsToHotel;
@@ -31,6 +43,9 @@ class Client extends Model
         ];
     }
 
+    /**
+     * @return HasMany<Reservation, $this>
+     */
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);

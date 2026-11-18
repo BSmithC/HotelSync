@@ -14,6 +14,17 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * Rows are never updated or deleted. Voiding a payment or an expense inserts
  * an opposite movement that references the original one through
  * `reversal_of_id`, so every balance can be rebuilt without losing history.
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property string $direction
+ * @property string $amount
+ * @property string $description
+ * @property string|null $source_type
+ * @property int|null $source_id
+ * @property \Carbon\CarbonImmutable $occurred_at
+ * @property int|null $reversal_of_id
+ * @property int|null $created_by
  */
 class FinanceMovement extends Model
 {
@@ -51,21 +62,33 @@ class FinanceMovement extends Model
         ];
     }
 
+    /**
+     * @return MorphTo<Model, $this>
+     */
     public function source(): MorphTo
     {
         return $this->morphTo();
     }
 
+    /**
+     * @return BelongsTo<FinanceMovement, $this>
+     */
     public function reversalOf(): BelongsTo
     {
         return $this->belongsTo(self::class, 'reversal_of_id');
     }
 
+    /**
+     * @return HasMany<FinanceMovement, $this>
+     */
     public function reversals(): HasMany
     {
         return $this->hasMany(self::class, 'reversal_of_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

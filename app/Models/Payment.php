@@ -7,6 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property int $bill_id
+ * @property int|null $client_id
+ * @property string $method
+ * @property string $amount
+ * @property \Carbon\CarbonImmutable $paid_at
+ * @property string|null $reference
+ * @property string|null $notes
+ * @property string $status
+ * @property string|null $idempotency_key
+ * @property int|null $created_by
+ * @property int|null $voided_by
+ * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property string|null $void_reason
+ */
 class Payment extends Model
 {
     use BelongsToHotel;
@@ -54,26 +72,41 @@ class Payment extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Bill, $this>
+     */
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
     }
 
+    /**
+     * @return BelongsTo<Client, $this>
+     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function voidedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by');
     }
 
+    /**
+     * @return MorphMany<FinanceMovement, $this>
+     */
     public function movements(): MorphMany
     {
         return $this->morphMany(FinanceMovement::class, 'source');

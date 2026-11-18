@@ -10,6 +10,7 @@ use App\Support\Permission;
 use App\Support\Role;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -36,8 +37,8 @@ class EmployeesController extends Controller
         $canAccess = $user->can(Permission::EmployeesAccess->value);
 
         $hotel = app(CurrentHotel::class)->model();
-        $timezone = $hotel?->timezone ?? config('app.timezone');
-        $currency = $hotel?->currency ?? 'DOP';
+        $timezone = app(CurrentHotel::class)->timezone();
+        $currency = app(CurrentHotel::class)->currency();
         $now = CarbonImmutable::now($timezone);
 
         $tab = (string) $request->input('tab', 'resumen');
@@ -395,7 +396,7 @@ class EmployeesController extends Controller
             ])
             ->all();
 
-        return User::query()
+        return array_values(User::query()
             ->where(function (Builder $query) use ($hotelId, $employeeByUser): void {
                 $query->whereHas('hotels', fn (Builder $hotel) => $hotel->where('hotels.id', $hotelId));
 
@@ -408,7 +409,8 @@ class EmployeesController extends Controller
             ->limit(300)
             ->get(['users.id', 'users.name', 'users.email'])
             ->map(function (User $user) use ($employeeByUser): array {
-                $role = $user->hotels->first()?->pivot?->role;
+                $pivot = $user->hotels->first()?->getAttribute('pivot');
+                $role = $pivot instanceof Pivot ? $pivot->getAttribute('role') : null;
 
                 return [
                     'id' => $user->id,
@@ -422,7 +424,7 @@ class EmployeesController extends Controller
                 ];
             })
             ->values()
-            ->all();
+            ->all());
     }
 
     private function parseDate(mixed $value, string $timezone): ?CarbonImmutable
@@ -433,7 +435,7 @@ class EmployeesController extends Controller
 
         $date = CarbonImmutable::createFromFormat('!Y-m-d', $value, $timezone);
 
-        return $date === false ? null : $date->startOfDay();
+        return $date instanceof CarbonImmutable ? $date->startOfDay() : null;
     }
 
     /**

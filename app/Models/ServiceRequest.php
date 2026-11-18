@@ -12,6 +12,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Lifecycle: pendiente → en_proceso → completado → facturado. A request that
  * never reached the invoice can be anulado; once facturado the invoice governs
  * and the request keeps its link for traceability.
+ *
+ * @property int $id
+ * @property int $hotel_id
+ * @property int $service_id
+ * @property int|null $client_id
+ * @property int|null $reservation_id
+ * @property int|null $bill_id
+ * @property int|null $bill_detail_id
+ * @property string $status
+ * @property int $quantity
+ * @property string $unit_price
+ * @property string $total
+ * @property \Carbon\CarbonImmutable $requested_at
+ * @property \Carbon\CarbonImmutable|null $completed_at
+ * @property \Carbon\CarbonImmutable|null $billed_at
+ * @property string|null $notes
+ * @property string|null $idempotency_key
+ * @property int|null $created_by
+ * @property int|null $billed_by
+ * @property int|null $voided_by
+ * @property \Carbon\CarbonImmutable|null $voided_at
+ * @property string|null $void_reason
  */
 class ServiceRequest extends Model
 {
@@ -84,41 +106,65 @@ class ServiceRequest extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Service, $this>
+     */
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
     }
 
+    /**
+     * @return BelongsTo<Client, $this>
+     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
 
+    /**
+     * @return BelongsTo<Reservation, $this>
+     */
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
     }
 
+    /**
+     * @return BelongsTo<Bill, $this>
+     */
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);
     }
 
+    /**
+     * @return BelongsTo<BillDetail, $this>
+     */
     public function billDetail(): BelongsTo
     {
         return $this->belongsTo(BillDetail::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function billedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'billed_by');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function voidedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by');

@@ -1,4 +1,5 @@
 import { Check, Monitor, Moon, Sun } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -21,10 +22,23 @@ const options: {
     { value: 'system', label: 'Sistema', icon: Monitor },
 ];
 
+const emptySubscribe = () => () => {};
+
 export function ThemeToggle() {
     const { appearance, resolvedAppearance, updateAppearance } =
         useAppearance();
-    const CurrentIcon = resolvedAppearance === 'dark' ? Moon : Sun;
+
+    // The server renders without access to `matchMedia`, so the first client
+    // render must reuse the same icon and only then follow the resolved
+    // appearance. `useSyncExternalStore` yields `false` for the server
+    // snapshot and `true` once hydrated, without setting state in an effect.
+    const mounted = useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false,
+    );
+
+    const CurrentIcon = mounted && resolvedAppearance === 'dark' ? Moon : Sun;
 
     return (
         <DropdownMenu>

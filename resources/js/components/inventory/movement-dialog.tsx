@@ -121,7 +121,7 @@ export function MovementDialog({
             return;
         }
 
-        post(storeMovement.url({ item: data.item_id }), {
+        post(storeMovement.url(Number.parseInt(data.item_id, 10)), {
             preserveScroll: true,
             onSuccess: onClose,
         });

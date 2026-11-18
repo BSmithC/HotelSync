@@ -5,6 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ *
+ * @property int $id
+ * @property int $bill_id
+ * @property string $description
+ * @property int $quantity
+ * @property string $unit_price
+ * @property string $subtotal
+ */
 class BillDetail extends Model
 {
     protected $fillable = [
@@ -27,6 +36,9 @@ class BillDetail extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Bill, $this>
+     */
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);

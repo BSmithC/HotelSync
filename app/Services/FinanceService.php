@@ -120,7 +120,7 @@ class FinanceService
     public function voidPayment(Payment $payment, User $user, string $reason): Payment
     {
         return DB::transaction(function () use ($payment, $user, $reason): Payment {
-            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->getKey());
+            $payment = Payment::query()->lockForUpdate()->findOrFail((int) $payment->getKey());
 
             if ($payment->status === 'anulado') {
                 throw ValidationException::withMessages([
@@ -252,7 +252,7 @@ class FinanceService
     public function voidExpense(Expense $expense, User $user, string $reason): Expense
     {
         return DB::transaction(function () use ($expense, $user, $reason): Expense {
-            $expense = Expense::query()->lockForUpdate()->findOrFail($expense->getKey());
+            $expense = Expense::query()->lockForUpdate()->findOrFail((int) $expense->getKey());
 
             if ($expense->status === 'anulado') {
                 throw ValidationException::withMessages([
@@ -430,7 +430,7 @@ class FinanceService
      */
     private function hotelNoon(string $date): CarbonImmutable
     {
-        $timezone = app(CurrentHotel::class)->model()?->timezone ?? config('app.timezone');
+        $timezone = app(CurrentHotel::class)->timezone();
 
         return CarbonImmutable::parse("{$date} 12:00:00", $timezone)->utc();
     }

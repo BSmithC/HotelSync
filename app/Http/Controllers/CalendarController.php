@@ -54,8 +54,7 @@ class CalendarController extends Controller
      */
     public function index(Request $request): Response
     {
-        $timezone = app(CurrentHotel::class)->model()?->timezone
-            ?? config('app.timezone');
+        $timezone = app(CurrentHotel::class)->timezone();
 
         $today = CarbonImmutable::now($timezone);
         $monthStart = $this->resolveMonth($request, $today);
@@ -105,13 +104,18 @@ class CalendarController extends Controller
             ? 'lista'
             : 'calendario';
 
+        $localizedMonth = $monthStart->locale('es');
+        $monthLabel = $localizedMonth instanceof CarbonImmutable
+            ? $localizedMonth->translatedFormat('F Y')
+            : $monthStart->translatedFormat('F Y');
+
         return Inertia::render('Calendar/Index', [
             'events' => $events,
             'monthEvents' => $monthEvents,
             'view' => $view,
             'calendar' => [
                 'month' => $monthStart->format('Y-m'),
-                'label' => ucfirst($monthStart->locale('es')->translatedFormat('F Y')),
+                'label' => ucfirst($monthLabel),
                 'grid_start' => $gridStart->toDateString(),
                 'grid_end' => $gridEnd->toDateString(),
                 'today' => $today->toDateString(),
@@ -143,6 +147,8 @@ class CalendarController extends Controller
 
     /**
      * Apply the shared search and state filters to the event query.
+     *
+     * @param  Builder<Calendar>  $query
      */
     private function applyFilters(Builder $query, Request $request): void
     {
