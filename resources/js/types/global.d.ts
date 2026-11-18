@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { HotelConfig, HotelSummary } from '@/types/hotel';
 import type { RoomStatusColors } from '@/types/room';
 
 declare module 'react' {
@@ -15,6 +16,10 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             roomStatusColors: RoomStatusColors;
+            currentHotel: HotelSummary | null;
+            hotels: HotelSummary[];
+            hotelConfig: HotelConfig;
+            hotelConfigDefaults: HotelConfig;
             [key: string]: unknown;
         };
     }

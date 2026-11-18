@@ -13,6 +13,7 @@ import {
     Settings,
     Sparkles,
     UserCog,
+    UserRound,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -147,9 +148,15 @@ const navGroups: NavGroup[] = [
         label: 'Sistema',
         items: [
             {
-                title: 'Configuración',
-                href: editProfile(),
+                title: 'Configuración del hotel',
+                href: '/settings/hotel/general',
                 icon: Settings,
+                permission: 'settings.manage',
+            },
+            {
+                title: 'Mi cuenta',
+                href: editProfile(),
+                icon: UserRound,
             },
         ],
     },

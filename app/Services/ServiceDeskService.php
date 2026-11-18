@@ -9,6 +9,7 @@ use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Support\CurrentHotel;
+use App\Support\HotelConfig;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -386,6 +387,11 @@ class ServiceDeskService
 
     private function createBill(ServiceRequest $request, float $lineTotal, User $user): Bill
     {
+        // Taxes apply only to new invoices. Historical bills keep the rate
+        // they were issued with, because their totals are stored rows.
+        $taxRate = HotelConfig::current()['tax_rate'];
+        $tax = round($lineTotal * $taxRate / 100, 2);
+
         return Bill::create([
             'hotel_id' => app(CurrentHotel::class)->id(),
             'client_id' => $request->client_id,
@@ -393,8 +399,8 @@ class ServiceDeskService
             'number' => $this->nextBillNumber(),
             'issued_at' => $this->today(),
             'subtotal' => $lineTotal,
-            'tax' => 0,
-            'total' => $lineTotal,
+            'tax' => $tax,
+            'total' => round($lineTotal + $tax, 2),
             'status' => 'Pendiente',
             'notes' => "Generada desde Servicios · solicitud #{$request->id}",
             'active' => true,
@@ -442,7 +448,8 @@ class ServiceDeskService
      */
     private function nextBillNumber(): string
     {
-        $prefix = 'SRV-'.now($this->timezone())->format('Ymd').'-';
+        $invoicePrefix = HotelConfig::current()['invoice_prefix'];
+        $prefix = $invoicePrefix.'-'.now($this->timezone())->format('Ymd').'-';
 
         for ($attempt = 0; $attempt < 10; $attempt++) {
             $number = $prefix.Str::upper(Str::random(6));

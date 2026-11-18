@@ -38,6 +38,8 @@ enum Permission: string
     case RoomsManage = 'rooms.manage';
     case RoomsLayout = 'rooms.layout';
 
+    case SettingsManage = 'settings.manage';
+
     /**
      * Roles allowed to perform this ability.
      *
@@ -120,7 +122,8 @@ enum Permission: string
             ],
 
             self::RoomsManage,
-            self::RoomsLayout => [
+            self::RoomsLayout,
+            self::SettingsManage => [
                 Role::Owner,
                 Role::Admin,
             ],
@@ -154,6 +157,7 @@ enum Permission: string
             self::RoomsView => 'Ver habitaciones',
             self::RoomsManage => 'Gestionar habitaciones',
             self::RoomsLayout => 'Editar plano de habitaciones',
+            self::SettingsManage => 'Gestionar configuración del hotel',
         };
     }
 

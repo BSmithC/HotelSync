@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\CurrentHotel;
+use App\Support\HotelConfig;
 use App\Support\RoomStatus;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -53,7 +54,20 @@ class HandleInertiaRequests extends Middleware
                     ? null
                     : $user?->roleEnumIn($currentHotel)?->label(),
             ],
-            'currentHotel' => $currentHotel?->only(['id', 'name', 'slug', 'currency']),
+            'currentHotel' => $currentHotel?->only([
+                'id',
+                'name',
+                'slug',
+                'legal_name',
+                'rnc',
+                'address',
+                'phone',
+                'email',
+                'currency',
+                'timezone',
+            ]),
+            'hotelConfig' => HotelConfig::for($currentHotel),
+            'hotelConfigDefaults' => HotelConfig::defaults(),
             'roomStatusColors' => RoomStatus::colorsFor($currentHotel),
             'hotels' => $user === null
                 ? []

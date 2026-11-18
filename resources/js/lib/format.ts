@@ -1,4 +1,31 @@
 /**
+ * Active locale/currency for the current hotel.
+ *
+ * The shared Inertia props configure these values on every request. Screens
+ * that need a deterministic preview can pass an explicit locale/currency to
+ * the functions instead of relying on the module state.
+ */
+let activeLocale = 'es-DO';
+let activeCurrency = 'DOP';
+
+export function configureFormatting(options: {
+    locale?: string | null;
+    currency?: string | null;
+}): void {
+    if (options.locale) {
+        activeLocale = options.locale;
+    }
+
+    if (options.currency) {
+        activeCurrency = options.currency.toUpperCase();
+    }
+}
+
+export function formatLocale(): string {
+    return activeLocale;
+}
+
+/**
  * Parses a date value without shifting date-only strings across timezones.
  *
  * `new Date('2026-11-18')` is interpreted as UTC midnight, which can render as
@@ -25,13 +52,16 @@ function normalizeSpaces(value: string): string {
     return value.replace(/[\u00a0\u202f]/g, ' ');
 }
 
-export function formatDate(value?: string | null): string {
+export function formatDate(
+    value?: string | null,
+    locale = activeLocale,
+): string {
     if (!value) {
         return '—';
     }
 
     return normalizeSpaces(
-        parseDate(value).toLocaleDateString('es-DO', {
+        parseDate(value).toLocaleDateString(locale, {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -39,26 +69,32 @@ export function formatDate(value?: string | null): string {
     );
 }
 
-export function formatDateShort(value?: string | null): string {
+export function formatDateShort(
+    value?: string | null,
+    locale = activeLocale,
+): string {
     if (!value) {
         return '—';
     }
 
     return normalizeSpaces(
-        parseDate(value).toLocaleDateString('es-DO', {
+        parseDate(value).toLocaleDateString(locale, {
             day: '2-digit',
             month: 'short',
         }),
     );
 }
 
-export function formatDateTime(value?: string | null): string {
+export function formatDateTime(
+    value?: string | null,
+    locale = activeLocale,
+): string {
     if (!value) {
         return '—';
     }
 
     return normalizeSpaces(
-        parseDate(value).toLocaleString('es-DO', {
+        parseDate(value).toLocaleString(locale, {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -70,10 +106,11 @@ export function formatDateTime(value?: string | null): string {
 
 export function formatCurrency(
     value?: string | number | null,
-    currency = 'DOP',
+    currency = activeCurrency,
+    locale = activeLocale,
 ): string {
     return normalizeSpaces(
-        new Intl.NumberFormat('es-DO', {
+        new Intl.NumberFormat(locale, {
             style: 'currency',
             currency,
             minimumFractionDigits: 2,
@@ -83,10 +120,11 @@ export function formatCurrency(
 
 export function formatCompactCurrency(
     value?: string | number | null,
-    currency = 'DOP',
+    currency = activeCurrency,
+    locale = activeLocale,
 ): string {
     return normalizeSpaces(
-        new Intl.NumberFormat('es-DO', {
+        new Intl.NumberFormat(locale, {
             style: 'currency',
             currency,
             notation: 'compact',
@@ -95,9 +133,12 @@ export function formatCompactCurrency(
     );
 }
 
-export function formatNumber(value?: string | number | null): string {
+export function formatNumber(
+    value?: string | number | null,
+    locale = activeLocale,
+): string {
     return normalizeSpaces(
-        new Intl.NumberFormat('es-DO').format(Number(value ?? 0)),
+        new Intl.NumberFormat(locale).format(Number(value ?? 0)),
     );
 }
 

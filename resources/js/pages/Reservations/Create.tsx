@@ -1,4 +1,5 @@
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Info } from 'lucide-react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,8 @@ export default function Create({
     clients: ClientOption[];
     rooms: Option[];
 }) {
+    const { hotelConfig } = usePage().props;
+
     const { data, setData, post, processing, errors } = useForm({
         client_id: '',
         room_id: '',
@@ -47,6 +50,17 @@ export default function Create({
         status: 'Pendiente',
         notes: '',
     });
+
+    const stayLimits = [
+        hotelConfig.min_nights > 0
+            ? `mínimo ${hotelConfig.min_nights} noche(s)`
+            : null,
+        hotelConfig.max_nights > 0
+            ? `máximo ${hotelConfig.max_nights} noche(s)`
+            : null,
+    ]
+        .filter(Boolean)
+        .join(' · ');
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -227,6 +241,26 @@ export default function Create({
                                         {errors.status}
                                     </p>
                                 )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+                            <Info className="mt-0.5 size-4 shrink-0" />
+                            <div className="space-y-1">
+                                <p>
+                                    Política del hotel: check-in a las{' '}
+                                    {hotelConfig.check_in_time} y check-out a
+                                    las {hotelConfig.check_out_time}
+                                    {stayLimits
+                                        ? ` · estancia ${stayLimits}`
+                                        : ''}
+                                    .
+                                </p>
+                                <p>
+                                    Los huéspedes no pueden superar la capacidad
+                                    de la habitación seleccionada. El servidor
+                                    valida ambos límites al guardar.
+                                </p>
                             </div>
                         </div>
 

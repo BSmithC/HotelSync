@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Settings\HotelOperationsController;
+use App\Http\Controllers\Settings\HotelPreferencesController;
+use App\Http\Controllers\Settings\HotelProfileController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Support\Facades\Route;
@@ -22,4 +25,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
+
+    // Configuración del hotel activo. El hotel siempre se resuelve en el
+    // servidor: ninguna de estas rutas acepta un hotel_id del frontend.
+    Route::prefix('settings/hotel')->name('hotel-settings.')->group(function () {
+        Route::get('general', [HotelProfileController::class, 'edit'])->name('general.edit');
+        Route::patch('general', [HotelProfileController::class, 'update'])->name('general.update');
+
+        Route::get('regional', [HotelPreferencesController::class, 'regional'])->name('regional.edit');
+        Route::patch('regional', [HotelPreferencesController::class, 'updateRegional'])->name('regional.update');
+
+        Route::get('reservations', [HotelPreferencesController::class, 'reservations'])->name('reservations.edit');
+        Route::patch('reservations', [HotelPreferencesController::class, 'updateReservations'])->name('reservations.update');
+
+        Route::get('finance', [HotelPreferencesController::class, 'finance'])->name('finance.edit');
+        Route::patch('finance', [HotelPreferencesController::class, 'updateFinance'])->name('finance.update');
+
+        Route::get('rooms', [HotelOperationsController::class, 'edit'])->name('rooms.edit');
+
+        Route::patch('{section}/reset', [HotelPreferencesController::class, 'reset'])
+            ->whereIn('section', ['regional', 'reservations', 'finance'])
+            ->name('reset');
+    });
 });

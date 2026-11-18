@@ -7,6 +7,10 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Services\AuditLogger;
 use App\Support\CurrentHotel;
+use App\Support\HotelConfig;
+use Carbon\CarbonImmutable;
+use Carbon\Exceptions\InvalidFormatException;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -25,23 +29,104 @@ class ReservationController extends Controller
     /**
      * Validation rules shared by store and update.
      *
-     * The client and the room must belong to the current hotel.
+     * The client and the room must belong to the current hotel. The stay and
+     * capacity policy is only enforced when the request is creating a
+     * reservation or touching the fields it governs, so historical reservations
+     * that no longer fit the current policy can still change status or notes.
      *
      * @return array<string, mixed>
      */
-    private function rules(): array
+    private function rules(Request $request, bool $enforcePolicy = true): array
     {
         $hotelId = app(CurrentHotel::class)->id();
+
+        $finishedAt = ['nullable', 'date', 'after_or_equal:reserved_at'];
+
+        if ($enforcePolicy) {
+            $finishedAt[] = function (string $attribute, mixed $value, Closure $fail) use ($request): void {
+                if ($value === null || $value === '' || ! $request->filled('reserved_at')) {
+                    return;
+                }
+
+                $config = HotelConfig::current();
+                $start = CarbonImmutable::parse((string) $request->input('reserved_at'))->startOfDay();
+                $end = CarbonImmutable::parse((string) $value)->startOfDay();
+                $nights = (int) $start->diffInDays($end);
+
+                if ($nights < $config['min_nights']) {
+                    $fail("La estancia mínima es de {$config['min_nights']} noche(s).");
+                }
+
+                if ($config['max_nights'] > 0 && $nights > $config['max_nights']) {
+                    $fail("La estancia máxima es de {$config['max_nights']} noche(s).");
+                }
+            };
+        }
+
+        $guests = ['required', 'integer', 'min:1'];
+
+        if ($enforcePolicy) {
+            $guests[] = function (string $attribute, mixed $value, Closure $fail) use ($request): void {
+                $roomId = $request->input('room_id');
+
+                if (! is_numeric($roomId)) {
+                    return;
+                }
+
+                $room = Room::query()->find((int) $roomId);
+
+                if ($room !== null && (int) $value > (int) $room->capacity) {
+                    $fail("La habitación {$room->name} admite hasta {$room->capacity} huésped(es).");
+                }
+            };
+        }
 
         return [
             'client_id' => ['required', Rule::exists('clients', 'id')->where('hotel_id', $hotelId)],
             'room_id' => ['required', Rule::exists('rooms', 'id')->where('hotel_id', $hotelId)],
             'reserved_at' => ['required', 'date'],
-            'finished_at' => ['nullable', 'date', 'after_or_equal:reserved_at'],
-            'guests' => ['required', 'integer', 'min:1'],
+            'finished_at' => $finishedAt,
+            'guests' => $guests,
             'status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
         ];
+    }
+
+    /**
+     * Whether the request changes a field controlled by the stay/capacity
+     * policy. Historical reservations only skip the policy when those fields
+     * stay untouched.
+     */
+    private function policyChanged(Reservation $reservation, Request $request): bool
+    {
+        if ((int) $request->input('room_id') !== (int) $reservation->room_id) {
+            return true;
+        }
+
+        if ((int) $request->input('guests') !== (int) $reservation->guests) {
+            return true;
+        }
+
+        return $this->inputTimestamp($request->input('reserved_at')) !== $reservation->reserved_at->getTimestamp()
+            || $this->inputTimestamp($request->input('finished_at')) !== $reservation->finished_at?->getTimestamp();
+    }
+
+    /**
+     * Normalize an incoming date to a Unix timestamp so dates can be compared
+     * regardless of how the form serializes them.
+     */
+    private function inputTimestamp(mixed $value): ?int
+    {
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value)->getTimestamp();
+        } catch (InvalidFormatException) {
+            // Invalid dates are reported by the validation rules instead.
+            return null;
+        }
     }
 
     /**
@@ -94,7 +179,7 @@ class ReservationController extends Controller
      */
     public function store(Request $request, AuditLogger $audit): RedirectResponse
     {
-        $validated = $request->validate($this->rules());
+        $validated = $request->validate($this->rules($request));
 
         $reservation = Reservation::create([
             ...$validated,
@@ -152,7 +237,9 @@ class ReservationController extends Controller
 
         $before = $reservation->only(['client_id', 'room_id', 'reserved_at', 'finished_at', 'guests', 'status', 'active']);
 
-        $reservation->update($request->validate($this->rules()));
+        $reservation->update($request->validate(
+            $this->rules($request, $this->policyChanged($reservation, $request)),
+        ));
 
         $audit->record(
             module: 'reception',

@@ -166,6 +166,9 @@ Los índices de todos los módulos comparten el mismo patrón:
 | `employees.view` / `employees.manage` / `employees.sensitive` / `employees.access` | ✅ | ✅ | — | — | — | — | ✅ |
 | `reports.view` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `reports.export` | ✅ | ✅ | — | ✅ | — | — | — |
+| `rooms.view` | ✅ | ✅ | ✅ | ✅ | — | ✅ | — |
+| `rooms.manage` / `rooms.layout` | ✅ | ✅ | — | — | — | — | — |
+| `settings.manage` | ✅ | ✅ | — | — | — | — | — |
 
 > Los empleados **no** son usuarios automáticamente. Vincular un empleado a una cuenta requiere `employees.access`. Los campos sensibles (documentos, contacto personal, salario) solo se exponen con `employees.sensitive`.
 
@@ -299,6 +302,23 @@ Centro de reportes con datos reales, comparativas y exportación:
 - CRUD de sucursales con descripción, teléfono y estado.
 - CRUD de edificios vinculados a sucursal, con dirección, pisos y descripción.
 
+### ⚙️ Configuración del hotel
+
+Centro único en `/settings`, con dos grupos:
+
+- **Mi cuenta**: perfil, seguridad y apariencia (tema claro, oscuro o del sistema).
+- **Hotel**: visible solo con la habilidad `settings.manage` (propietario y administrador).
+
+La sección **Hotel** modifica datos reales del hotel activo; nunca acepta un `hotel_id` del frontend:
+
+- **General**: nombre comercial, razón social, RNC, dirección, teléfono y correo. Se guardan en columnas de `hotels`.
+- **Regional**: moneda, zona horaria e idioma. El formato de fechas, números e importes se aplica en toda la interfaz desde las props compartidas.
+- **Reservaciones**: horario de check-in/check-out y estancia mínima/máxima. El servidor valida las noches y la capacidad de la habitación al crear o editar reservas.
+- **Finanzas**: porcentaje de impuesto y prefijo de numeración. Solo afectan a las facturas nuevas generadas desde Servicios; las facturas históricas no se recalculan.
+- **Habitaciones**: paleta de colores de los estados operativos, compartida con el plano y la recepción.
+
+Cada sección incluye buscador, indicador de cambios sin guardar, descarte, guardado y restauración de predeterminados con confirmación. Los cambios se validan y autorizan en Laravel y quedan registrados en `audit_logs`.
+
 ### 🔔 Notificaciones
 
 - El menú mantiene un estado vacío explícito. No se inventan alertas mientras no exista un motor de notificaciones.
@@ -336,6 +356,8 @@ Centro de reportes con datos reales, comparativas y exportación:
 | `audit_logs` | Trazabilidad de operaciones sensibles | `user`, `subject` (polimórfico) |
 
 Todas las tablas de negocio incluyen `hotel_id`, `active` y marcas de tiempo. Los documentos de cliente (`cedula`, `rnc`) son únicos dentro de cada hotel.
+
+La columna JSON `hotels.settings` guarda las preferencias del hotel en secciones tipadas: `regional` (`locale`), `reservations` (`check_in_time`, `check_out_time`, `min_nights`, `max_nights`), `finance` (`tax_rate`, `invoice_prefix`) y `room_status_colors`. Las claves desconocidas se preservan al escribir, de modo que nuevas secciones pueden convivir con instalaciones existentes.
 
 ---
 
@@ -391,6 +413,17 @@ Todas las tablas de negocio incluyen `hotel_id`, `active` y marcas de tiempo. Lo
 | `GET` | `/settings/profile` | Perfil |
 | `GET` | `/settings/security` | Seguridad y contraseña |
 | `GET` | `/settings/appearance` | Apariencia |
+| `GET` | `/settings/hotel/general` | Identidad y contacto del hotel |
+| `PATCH` | `/settings/hotel/general` | Guardar identidad del hotel |
+| `GET` | `/settings/hotel/regional` | Moneda, zona horaria e idioma |
+| `PATCH` | `/settings/hotel/regional` | Guardar configuración regional |
+| `GET` | `/settings/hotel/reservations` | Política de reservaciones |
+| `PATCH` | `/settings/hotel/reservations` | Guardar política de reservaciones |
+| `GET` | `/settings/hotel/finance` | Impuesto y numeración |
+| `PATCH` | `/settings/hotel/finance` | Guardar configuración financiera |
+| `GET` | `/settings/hotel/rooms` | Colores de estados de habitación |
+| `PATCH` | `/settings/hotel/{section}/reset` | Restaurar predeterminados de una sección |
+| `PATCH` | `/hotels/current/settings` | Guardar la paleta de habitaciones |
 
 Los recursos clásicos usan `Route::resources(...)` y generan las rutas estándar `index`, `create`, `store`, `show`, `edit`, `update` y `destroy`.
 
@@ -655,7 +688,7 @@ HotelSync/
 │       └── app.tsx               # Entrada de Inertia + layouts
 ├── routes/
 │   ├── web.php                   # Rutas de negocio
-│   └── settings.php              # Perfil, seguridad y apariencia
+│   └── settings.php              # Cuenta, apariencia y configuración del hotel
 ├── tests/
 │   ├── Feature/                  # Pruebas de módulos, filtros y calendario
 │   └── Unit/
@@ -671,7 +704,10 @@ HotelSync/
 
 Estas funciones **no** están implementadas todavía y no se simulan en la interfaz:
 
-- ITBIS 18 %, NCF y facturación electrónica (e-CF).
+- ITBIS 18 %, NCF y facturación electrónica (e-CF). El porcentaje de impuesto ya es configurable, pero no se emiten comprobantes fiscales ni se integra la DGII.
+- Recálculo de facturas históricas al cambiar impuestos, moneda o numeración.
+- Configuración de notificaciones, backups, correo saliente e integraciones: no se muestran porque esas funciones todavía no existen.
+- Preferencias de usuario almacenadas en base de datos; hoy el tema se guarda en cookie/localStorage.
 - Exportación a PDF/Excel nativo; hoy se ofrece CSV compatible con Excel e impresión del navegador.
 - Consolidación de reportes entre varios hoteles; el centro de reportes trabaja con el hotel activo.
 - Compras que generen gastos automáticamente (decisión de producto pendiente).
