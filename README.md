@@ -1,16 +1,54 @@
-# HotelSync
+<p align="center">
+    <a href="https://laravel.com" target="_blank">
+        <img src="https://img.shields.io/badge/Laravel-13-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel">
+    </a>
+    <a href="https://www.php.net" target="_blank">
+        <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP">
+    </a>
+    <a href="https://inertiajs.com" target="_blank">
+        <img src="https://img.shields.io/badge/Inertia.js-3-9553E9?style=for-the-badge&logo=inertia&logoColor=white" alt="Inertia.js">
+    </a>
+</p>
 
-![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)
-![Inertia](https://img.shields.io/badge/Inertia.js-3-9553E9?logo=inertia&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
-![Pest](https://img.shields.io/badge/Pest-4-0B7A5C?logo=php&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-compatible-4479A1?logo=mysql&logoColor=white)
+<p align="center">
+    <a href="https://react.dev" target="_blank">
+        <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
+    </a>
+    <a href="https://www.typescriptlang.org" target="_blank">
+        <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+    </a>
+    <a href="https://tailwindcss.com" target="_blank">
+        <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+    </a>
+    <a href="https://vite.dev" target="_blank">
+        <img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
+    </a>
+</p>
 
-Sistema de gestión hotelera **multi-sucursal** construido con Laravel, Inertia y React. Centraliza huéspedes, habitaciones, reservas, facturación, inventario y la operación diaria de uno o varios hoteles en una sola aplicación.
+<p align="center">
+    <a href="https://pestphp.com" target="_blank">
+        <img src="https://img.shields.io/badge/Pest-4-0B7A5C?style=for-the-badge&logo=php&logoColor=white" alt="Pest">
+    </a>
+    <a href="https://www.mysql.com" target="_blank">
+        <img src="https://img.shields.io/badge/MySQL-compatible-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL compatible">
+    </a>
+    <a href="https://git-scm.com" target="_blank">
+        <img src="https://img.shields.io/badge/Git-F05033?style=for-the-badge&logo=git&logoColor=white" alt="Git">
+    </a>
+</p>
+
+<h1 align="center">HotelSync</h1>
+
+<p align="center">
+    <strong>Sistema de gestión hotelera multi-sucursal</strong><br />
+    Construido con Laravel 13, Inertia 3, React 19 y Tailwind CSS 4.
+</p>
+
+<br />
+
+---
+
+Sistema de gestión hotelera multi-sucursal que centraliza huéspedes, habitaciones, reservas, facturación, inventario y la operación diaria de uno o varios hoteles en una sola aplicación.
 
 La interfaz es un dashboard responsive inspirado en productos analíticos modernos: barra lateral navy, superficies claras, acento azul, tipografía Instrument Sans, modo claro/oscuro y componentes accesibles reutilizables.
 
@@ -18,55 +56,54 @@ La interfaz es un dashboard responsive inspirado en productos analíticos modern
 
 ---
 
-## ✨ Características / Features
+## Características / Features
 
 | Módulo | Descripción |
 | --- | --- |
-| 📊 **Dashboard** | Ingresos facturados y cobrados, ocupación, reservas activas, comparativas honestas y gráficas con Recharts. |
-| 🛎️ **Recepción** | Check-in, check-out, huéspedes alojados, cambio de habitación, estados e incidencias. |
-| 💰 **Finanzas** | Facturas, cobros, gastos y movimientos *append-only*, anulaciones con reverso y exportación CSV. |
-| 📦 **Inventario** | Catálogo con SKU único por hotel, entradas, salidas, ajustes, reversos y saldo transaccional. |
-| ✨ **Servicios** | Solicitudes de huéspedes con ciclo `pendiente → en_proceso → completado → facturado`. |
-| 👥 **Empleados** | Expedientes, datos sensibles protegidos y vinculación opcional de accesos. |
-| 📈 **Reportes** | Períodos reales, comparativas, desgloses, exportación CSV y paginación por pestaña. |
-| 🗓️ **Calendario** | Vista mensual y de lista, eventos, bloqueos y mantenimientos en la zona horaria del hotel. |
-| 🛏️ **Habitaciones** | CRUD, plano interactivo por áreas con arrastrar y soltar, camas e historial de estados. |
-| 🧾 **Huéspedes y reservas** | Clientes, reservas con validación de estancia/capacidad y facturación asociada. |
-| ⚙️ **Configuración** | Identidad, preferencias regionales, políticas de reserva, finanzas y colores operativos. |
+| **Dashboard** | Ingresos facturados y cobrados, ocupación, reservas activas, comparativas honestas y gráficas con Recharts. |
+| **Recepción** | Check-in, check-out, huéspedes alojados, cambio de habitación, estados e incidencias. |
+| **Finanzas** | Facturas, cobros, gastos y movimientos *append-only*, anulaciones con reverso y exportación CSV. |
+| **Inventario** | Catálogo con SKU único por hotel, entradas, salidas, ajustes, reversos y saldo transaccional. |
+| **Servicios** | Solicitudes de huéspedes con ciclo `pendiente → en_proceso → completado → facturado`. |
+| **Empleados** | Expedientes, datos sensibles protegidos y vinculación opcional de accesos. |
+| **Reportes** | Períodos reales, comparativas, desgloses, exportación CSV y paginación por pestaña. |
+| **Calendario** | Vista mensual y de lista, eventos, bloqueos y mantenimientos en la zona horaria del hotel. |
+| **Habitaciones** | CRUD, plano interactivo por áreas con arrastrar y soltar, camas e historial de estados. |
+| **Huéspedes y reservas** | Clientes, reservas con validación de estancia/capacidad y facturación asociada. |
+| **Configuración** | Identidad, preferencias regionales, políticas de reserva, finanzas y colores operativos. |
 
 ---
 
-## 🛠️ Stack tecnológico / Technology Stack
+## Stack tecnológico / Technology Stack
 
-| Tecnología | Versión | Uso |
-| --- | --- | --- |
-| 🐘 PHP | `^8.3` | Lenguaje del servidor |
-| 🚀 Laravel | `^13.17` | Framework principal |
-| 🔐 Laravel Fortify | `^1.37` | Autenticación, verificación y seguridad |
-| 🧩 Inertia Laravel + React | `^3.0` | Páginas React sin API REST separada |
-| 🧭 Laravel Wayfinder | `^0.1.14` | Rutas y acciones tipadas para TypeScript |
-| ⚛️ React + TypeScript | `^19.2` / `^5.7` | Interfaz de usuario |
-| ⚡ Vite | `^8.0` | Bundler y servidor de desarrollo |
-| 🎨 Tailwind CSS | `^4.1` | Tokens de diseño y estilos utilitarios |
-| ♿ Radix UI + Lucide | — | Primitivas accesibles e iconografía |
-| 📊 Recharts + Sonner | `^3.11` / `^2.0` | Gráficas y notificaciones |
-| 🗄️ SQLite / MySQL / PostgreSQL | — | Persistencia (SQLite por defecto) |
-
-**Calidad:** Pest 4, Laravel Pint, Larastan/PHPStan, ESLint, Prettier y GitHub Actions opcional vía `composer ci:check`.
+| Tecnología | Propósito |
+| --- | --- |
+| **Laravel 13** | Framework principal y capa de dominio |
+| **PHP 8.3+** | Lenguaje del servidor |
+| **Inertia 3** | Puente servidor a React sin API REST separada |
+| **React 19 y TypeScript 5.7** | Interfaz tipada de usuario |
+| **Vite 8** | Bundler y servidor de desarrollo |
+| **Tailwind CSS 4** | Tokens de diseño y estilos utilitarios |
+| **Fortify** | Autenticación, verificación y seguridad |
+| **Wayfinder** | Rutas y acciones tipadas para TypeScript |
+| **Radix UI y Lucide** | Primitivas accesibles e iconografía |
+| **Recharts y Sonner** | Gráficas y notificaciones |
+| **SQLite, MySQL o PostgreSQL** | Persistencia (SQLite por defecto) |
+| **Pest, Pint, Larastan, ESLint y Prettier** | Pruebas, formato y análisis estático |
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura / Architecture
 
 ### Multi-hotel (multi-tenant)
 
 - `hotels` es la entidad raíz; cada registro de negocio lleva `hotel_id`.
 - `App\Models\Concerns\BelongsToHotel` aplica un *global scope* que filtra consultas y asigna automáticamente el hotel al crear registros.
-- `App\Support\CurrentHotel` resuelve el hotel de la petición: valor explícito → sesión validada → primer hotel del usuario autenticado.
+- `App\Support\CurrentHotel` resuelve el hotel de la petición: valor explícito, sesión validada y, por último, el primer hotel del usuario autenticado.
 - `ResolveCurrentHotel` exige acceso y fija el contexto; el cambio de hotel se hace con `POST /hotels/{hotel}/switch`.
-- La tabla `hotel_user` guarda el rol por hotel. **Ninguna petición acepta un `hotel_id` del frontend.**
+- La tabla `hotel_user` guarda el rol por hotel. Ninguna petición acepta un `hotel_id` del frontend.
 
-### Comunicación servidor → cliente
+### Comunicación servidor a cliente
 
 No hay API REST propia. Cada controlador devuelve `Inertia::render(...)` con props tipadas consumidas por páginas React. Las rutas se importan desde `resources/js/routes` y `resources/js/actions`, generadas por Wayfinder:
 
@@ -74,7 +111,7 @@ No hay API REST propia. Cada controlador devuelve `Inertia::render(...)` con pro
 php artisan wayfinder:generate --with-form
 ```
 
-> Sin `--with-form` se eliminan los helpers que usan los formularios de autenticación.
+Sin `--with-form` se eliminan los helpers que usan los formularios de autenticación.
 
 ### Permisos
 
@@ -89,11 +126,11 @@ Los roles viven en `hotel_user.role` y las habilidades se declaran en `App\Suppo
 
 ### Zonas horarias
 
-Los timestamps se guardan en UTC. Cada hotel define su zona horaria; dashboard, recepción, calendario y reportes calculan “hoy”, períodos y agrupaciones en la zona del hotel antes de convertir a UTC.
+Los timestamps se guardan en UTC. Cada hotel define su zona horaria; dashboard, recepción, calendario y reportes calculan "hoy", períodos y agrupaciones en la zona del hotel antes de convertir a UTC.
 
 ---
 
-## 👥 Roles y permisos
+## Roles y permisos / Roles & Permissions
 
 | Rol (`hotel_user.role`) | Nombre | Alcance |
 | --- | --- | --- |
@@ -107,11 +144,11 @@ Los timestamps se guardan en UTC. Cada hotel define su zona horaria; dashboard, 
 
 Habilidades principales: `reception.*`, `finance.*`, `inventory.*`, `services.*`, `employees.*`, `reports.*`, `rooms.*` y `settings.manage` (solo propietario y administrador).
 
-> Los empleados **no** se convierten en usuarios automáticamente. Vincular un acceso requiere `employees.access`; los campos sensibles requieren `employees.sensitive`.
+Los empleados no se convierten en usuarios automáticamente. Vincular un acceso requiere `employees.access`; los campos sensibles requieren `employees.sensitive`.
 
 ---
 
-## 🧩 Modelo de datos
+## Modelo de datos / Data model
 
 | Tabla | Propósito |
 | --- | --- |
@@ -129,39 +166,43 @@ Todas las tablas de negocio incluyen `hotel_id`, `active` y marcas de tiempo. La
 
 ---
 
-## ✅ Requisitos / Requirements
+## Requisitos / Requirements
 
-- PHP 8.3+ con extensiones habituales de Laravel (`pdo`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`).
-- Composer 2.
-- Node.js 22 LTS o superior y npm.
-- SQLite (incluido por defecto) o MySQL/PostgreSQL.
+Antes de compilar y ejecutar, asegúrate de contar con lo siguiente:
+
+- **PHP 8.3+** con las extensiones habituales de Laravel (`pdo`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`).
+- **Composer 2**.
+- **Node.js 22 LTS** o superior y npm.
+- **SQLite** (incluido por defecto), MySQL o PostgreSQL.
 - Opcional: Laragon, Laravel Sail o Docker.
 
 ---
 
-## 🚀 Instalación / Installation
+## Instalación / Installation
+
+Sigue estos pasos para ejecutar HotelSync en tu entorno de desarrollo local:
 
 ```bash
-# 1. Clonar e instalar dependencias
+# 1. Clona este repositorio
 git clone https://github.com/BSmithC/HotelSync.git
 cd HotelSync
+
+# 2. Instala dependencias
 composer install
 npm install
 
-# 2. Entorno y clave
+# 3. Configura el entorno y genera la clave
 cp .env.example .env
 php artisan key:generate
 
-# 3. Base de datos SQLite (por defecto)
+# 4. Crea la base de datos SQLite (opción por defecto)
 touch database/database.sqlite
 
-# 4. Migrar y cargar datos de demostración
+# 5. Migra y carga los datos de demostración
 php artisan migrate --seed
 
-# 5. Compilar el frontend
+# 6. Compila el frontend y levanta el entorno completo
 npm run build
-
-# 6. Levantar servidor, colas y Vite
 composer dev
 ```
 
@@ -172,22 +213,22 @@ Copy-Item .env.example .env
 New-Item -ItemType File -Path database/database.sqlite -Force
 ```
 
-Para MySQL/PostgreSQL ajusta `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` y `DB_PASSWORD` en `.env`.
+Para MySQL o PostgreSQL ajusta `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` y `DB_PASSWORD` en `.env`.
 
-Abre `http://localhost:8000` (o `APP_URL`) e inicia sesión con el usuario de demostración.
+Abre `http://localhost:8000` (o la URL configurada en `APP_URL`) e inicia sesión con el usuario de demostración.
 
-### 🔑 Credenciales de demostración
+### Credenciales de demostración / Demo credentials
 
 | Campo | Valor |
 | --- | --- |
 | Correo | `test@example.com` |
 | Contraseña | `12345678` |
 
-> ⚠️ El seeder es solo para desarrollo. Cambia estas credenciales antes de desplegar.
+Nota: el seeder es solo para desarrollo. Cambia estas credenciales antes de desplegar.
 
 ---
 
-## 🧭 Rutas principales
+## Rutas principales / Main routes
 
 | Grupo | Rutas de ejemplo |
 | --- | --- |
@@ -207,14 +248,14 @@ php artisan route:list
 
 ---
 
-## 🎨 Diseño y experiencia de usuario
+## Diseño y experiencia de usuario / UI & UX
 
 | Token | Valor |
 | --- | --- |
 | Primary | `#465FFF` |
 | Sidebar | `#1C2434` |
-| Fondo claro / oscuro | `#F9FAFB` / `#101828` |
-| Éxito / error / advertencia | `#12B76A` / `#F04438` / `#F79009` |
+| Fondo claro y oscuro | `#F9FAFB` y `#101828` |
+| Éxito, error y advertencia | `#12B76A`, `#F04438` y `#F79009` |
 | Radio base | `12px` |
 | Tipografía | Instrument Sans (400, 500, 600) |
 
@@ -225,14 +266,14 @@ php artisan route:list
 
 ---
 
-## 🧪 Pruebas y calidad
+## Pruebas y calidad / Testing & Quality
 
 La suite usa **Pest** con `RefreshDatabase` y cubre autenticación, permisos, aislamiento entre hoteles, CRUD, filtros y paginación, flujo de recepción, finanzas, inventario, servicios, empleados, reportes, calendario y páginas de error.
 
 ```bash
 php artisan test              # Suite completa
-composer test                 # Pint + PHPStan + suite
-composer ci:check             # ESLint + Prettier + TypeScript + suite
+composer test                 # Pint, PHPStan y suite
+composer ci:check             # ESLint, Prettier, TypeScript y suite
 npm run types:check           # tsc --noEmit
 ```
 
@@ -244,39 +285,39 @@ php artisan test --filter=ReportsTest
 
 ---
 
-## 📜 Scripts disponibles
+## Scripts disponibles / Available scripts
 
 ### Composer
 
 | Comando | Descripción |
 | --- | --- |
 | `composer setup` | Dependencias, `.env`, clave, migración, npm y build |
-| `composer dev` | Servidor + colas + Vite en paralelo |
+| `composer dev` | Servidor, colas y Vite en paralelo |
 | `composer test` | Pint, PHPStan y pruebas |
-| `composer lint` / `composer lint:check` | Aplicar / verificar formato PHP |
-| `composer types:check` | Larastan/PHPStan |
+| `composer lint` y `composer lint:check` | Aplicar y verificar formato PHP |
+| `composer types:check` | Larastan y PHPStan |
 | `composer ci:check` | Verificaciones de frontend y pruebas |
 
 ### NPM
 
 | Comando | Descripción |
 | --- | --- |
-| `npm run dev` / `npm run build` | Desarrollo con HMR / compilación de producción |
-| `npm run build:ssr` | Compilación cliente + SSR |
-| `npm run lint` / `npm run lint:check` | ESLint con / sin autocorrección |
-| `npm run format` / `npm run format:check` | Prettier con / sin escritura |
+| `npm run dev` y `npm run build` | Desarrollo con HMR y compilación de producción |
+| `npm run build:ssr` | Compilación cliente y SSR |
+| `npm run lint` y `npm run lint:check` | ESLint con y sin autocorrección |
+| `npm run format` y `npm run format:check` | Prettier con y sin escritura |
 | `npm run types:check` | Comprobación de tipos |
 
 ---
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto / Project structure
 
 ```text
 HotelSync/
 ├── app/
 │   ├── Http/Controllers/       # Controladores por módulo y Settings
 │   ├── Http/Middleware/        # ResolveCurrentHotel, Inertia, apariencia
-│   ├── Models/                 # Eloquent + Concerns/BelongsToHotel
+│   ├── Models/                 # Eloquent y Concerns/BelongsToHotel
 │   ├── Policies/               # Autorización por hotel
 │   ├── Services/               # Finanzas, inventario, servicios, auditoría
 │   └── Support/                # CurrentHotel, Role, Permission, HotelConfig
@@ -289,7 +330,7 @@ HotelSync/
 │   ├── routes/                 # Rutas tipadas de Wayfinder
 │   ├── types/                  # Contratos compartidos
 │   └── app.tsx                 # Entrada de Inertia
-├── routes/                     # web.php + settings.php
+├── routes/                     # web.php y settings.php
 ├── tests/                      # Feature y Unit con Pest
 └── README.md
 ```
@@ -300,17 +341,17 @@ HotelSync/
 - Scope de hotel activo en toda consulta de negocio; `hotel_id` nunca llega del frontend.
 - Autorización en servidor, filtros validados contra listas blancas y paginación con `withQueryString()`.
 - Transacciones e idempotencia en operaciones financieras y de inventario; sin borrado de historia.
-- Pint para PHP, Prettier + ESLint para TypeScript/React; todo cambio de backend se acompaña de pruebas.
+- Pint para PHP, Prettier y ESLint para TypeScript/React; todo cambio de backend se acompaña de pruebas.
 
 ---
 
-## 🚧 Limitaciones / Next steps
+## Limitaciones / Next steps
 
-Estas funciones **no** están implementadas y no se simulan en la interfaz:
+Estas funciones no están implementadas y no se simulan en la interfaz:
 
 - ITBIS, NCF y facturación electrónica (e-CF); el impuesto es configurable pero no hay integración con DGII.
 - Recálculo de facturas históricas al cambiar impuestos, moneda o numeración.
-- Consolidación de reportes entre hoteles y exportación nativa a PDF/Excel (hoy CSV + impresión).
+- Consolidación de reportes entre hoteles y exportación nativa a PDF o Excel (hoy CSV e impresión).
 - Preferencias de usuario en base de datos, notificaciones automáticas, backups y correo saliente.
 - Tipos de habitación, tarifas por temporada, fotografías y página pública del hotel.
 - Pagos en línea, depósitos, conciliación bancaria y compras que generen gastos automáticamente.
@@ -318,6 +359,6 @@ Estas funciones **no** están implementadas y no se simulan en la interfaz:
 
 ---
 
-## 📄 Licencia
+## Licencia / License
 
 Proyecto privado de gestión hotelera. El skeleton base de Laravel se distribuye bajo licencia MIT; el código de negocio de HotelSync pertenece a sus autores.
