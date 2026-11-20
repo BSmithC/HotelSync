@@ -1,69 +1,90 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { CircleCheck, TriangleAlert } from 'lucide-react';
+
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <>
-            <Head title="Forgot password" />
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
+            <Head title="Recuperar contraseña" />
 
             <div className="space-y-6">
-                <Form {...email.form()}>
+                {status ? (
+                    <Alert className="border-success/30 bg-success/10 text-success">
+                        <CircleCheck />
+                        <AlertDescription className="text-success">
+                            {status}
+                        </AlertDescription>
+                    </Alert>
+                ) : null}
+
+                <Form {...email.form()} className="flex flex-col gap-6">
                     {({ processing, errors }) => (
-                        <>
+                        <div className="grid gap-5">
+                            {Object.keys(errors).length > 0 ? (
+                                <Alert className="border-destructive/30 bg-destructive/10 text-destructive">
+                                    <TriangleAlert />
+                                    <AlertDescription className="text-destructive">
+                                        No pudimos enviar el enlace. Revisa el
+                                        correo e inténtalo de nuevo.
+                                    </AlertDescription>
+                                </Alert>
+                            ) : null}
+
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">
+                                    Correo electrónico
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     name="email"
-                                    autoComplete="off"
+                                    required
                                     autoFocus
-                                    placeholder="email@example.com"
+                                    autoComplete="email"
+                                    placeholder="nombre@correo.com"
+                                    disabled={processing}
+                                    aria-invalid={Boolean(errors.email)}
                                 />
-
                                 <InputError message={errors.email} />
                             </div>
 
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
-                                    disabled={processing}
-                                    data-test="email-password-reset-link-button"
-                                >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Email password reset link
-                                </Button>
-                            </div>
-                        </>
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={processing}
+                                data-test="email-password-reset-link-button"
+                            >
+                                {processing ? <Spinner /> : null}
+                                {processing
+                                    ? 'Enviando enlace...'
+                                    : 'Enviar enlace de recuperación'}
+                            </Button>
+                        </div>
                     )}
                 </Form>
 
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
-                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                    ¿Recordaste tu contraseña?{' '}
+                    <TextLink href={login()}>
+                        Volver al inicio de sesión
+                    </TextLink>
+                </p>
             </div>
         </>
     );
 }
 
 ForgotPassword.layout = {
-    title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
+    title: 'Restablece tu contraseña',
+    description:
+        'Ingresa tu correo electrónico y te enviaremos un enlace para restablecerla.',
 };
